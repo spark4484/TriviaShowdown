@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Trivia Showdown</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23161a2b'/><path d='M50 50 L50 4 A46 46 0 0 1 89.8 27z' fill='%232d7dd2'/><path d='M50 50 L89.8 27 A46 46 0 0 1 89.8 73z' fill='%23e0489f'/><path d='M50 50 L89.8 73 A46 46 0 0 1 50 96z' fill='%23eab308'/><path d='M50 50 L50 96 A46 46 0 0 1 10.2 73z' fill='%239061f9'/><path d='M50 50 L10.2 73 A46 46 0 0 1 10.2 27z' fill='%2322c55e'/><path d='M50 50 L10.2 27 A46 46 0 0 1 50 4z' fill='%23f97316'/></svg>" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============================ HOME ============================ -->
+  <section id="screen-home" class="screen active">
+    <div class="home-card">
+      <div class="brand">
+        <svg viewBox="-50 -50 100 100" class="brand-wheel" aria-hidden="true"></svg>
+        <div>
+          <h1>Trivia Showdown</h1>
+          <p class="tagline">Race around the wheel, win all six wedges, take the hub.</p>
+        </div>
+      </div>
+
+      <label class="field">
+        <span>Your name</span>
+        <input id="input-name" type="text" maxlength="18" placeholder="e.g. Sam" autocomplete="nickname" />
+      </label>
+
+      <div class="home-actions">
+        <button id="btn-create" class="btn primary big">Create a game</button>
+        <div class="or"><span>or</span></div>
+        <div class="join-row">
+          <input id="input-code" type="text" maxlength="4" placeholder="CODE" autocapitalize="characters" spellcheck="false" />
+          <button id="btn-join" class="btn big">Join</button>
+        </div>
+      </div>
+
+      <p id="home-error" class="error-line" hidden></p>
+      <p class="conn-note"><span id="conn-dot" class="dot"></span><span id="conn-text">connecting…</span></p>
+    </div>
+  </section>
+
+  <!-- ============================ GAME ============================ -->
+  <section id="screen-game" class="screen">
+    <header class="topbar">
+      <div class="topbar-left">
+        <svg viewBox="-50 -50 100 100" class="brand-wheel small" aria-hidden="true"></svg>
+        <strong>Trivia Showdown</strong>
+      </div>
+      <div class="topbar-right">
+        <button id="btn-share" class="btn ghost" title="Copy the invite link">
+          Room <span id="room-code" class="code">----</span>
+        </button>
+        <button id="btn-quit" class="btn ghost danger" title="Leave the room">Leave</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- board -->
+      <main class="board-pane">
+        <svg id="board" viewBox="-340 -340 680 680" role="img" aria-label="Game board"></svg>
+
+        <div id="controls" class="controls">
+          <div id="turn-banner" class="turn-banner"></div>
+          <div id="control-slot" class="control-slot"></div>
+        </div>
+      </main>
+
+      <!-- sidebar -->
+      <aside class="sidebar">
+        <div id="lobby-panel" class="panel">
+          <h2>Lobby</h2>
+          <p class="hint">Share the room code with your friends. Up to 6 players.</p>
+          <div class="invite">
+            <input id="invite-link" type="text" readonly />
+            <button id="btn-copy" class="btn small">Copy</button>
+          </div>
+          <div id="settings" class="settings">
+            <label class="field row">
+              <span>Wedges to win</span>
+              <select id="opt-wedges">
+                <option value="3">3 &mdash; quick</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6" selected>6 &mdash; classic</option>
+              </select>
+            </label>
+            <label class="field row">
+              <span>Answer timer</span>
+              <select id="opt-seconds">
+                <option value="0">No limit</option>
+                <option value="20">20 seconds</option>
+                <option value="30" selected>30 seconds</option>
+                <option value="45">45 seconds</option>
+                <option value="60">60 seconds</option>
+              </select>
+            </label>
+          </div>
+          <button id="btn-start" class="btn primary wide">Start game</button>
+          <p id="lobby-note" class="hint"></p>
+        </div>
+
+        <div class="panel grow">
+          <h2>Players</h2>
+          <ul id="player-list" class="player-list"></ul>
+        </div>
+
+        <div class="panel grow feed-panel">
+          <div class="tabs">
+            <button class="tab active" data-tab="log">Game log</button>
+            <button class="tab" data-tab="chat">Chat</button>
+          </div>
+          <ul id="log-list" class="feed" data-pane="log"></ul>
+          <div class="chat-pane" data-pane="chat" hidden>
+            <ul id="chat-list" class="feed"></ul>
+            <form id="chat-form" class="chat-form">
+              <input id="chat-input" type="text" maxlength="300" placeholder="Say something…" autocomplete="off" />
+              <button class="btn small primary" type="submit">Send</button>
+            </form>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ========================== OVERLAYS ========================== -->
+  <div id="question-overlay" class="overlay" hidden>
+    <div id="question-card" class="question-card">
+      <div class="q-head">
+        <span id="q-category" class="q-category">Category</span>
+        <span id="q-badge" class="q-badge" hidden>Headquarters</span>
+      </div>
+      <div id="q-timer" class="q-timer"><i></i></div>
+      <p id="q-text" class="q-text"></p>
+      <div id="q-choices" class="q-choices"></div>
+      <p id="q-status" class="q-status"></p>
+    </div>
+  </div>
+
+  <div id="category-overlay" class="overlay" hidden>
+    <div class="question-card">
+      <h2 id="cat-title">Choose the winning category</h2>
+      <p id="cat-sub" class="q-status"></p>
+      <div id="cat-choices" class="cat-choices"></div>
+    </div>
+  </div>
+
+  <div id="winner-overlay" class="overlay" hidden>
+    <div class="question-card winner">
+      <div id="winner-wheel"></div>
+      <h2 id="winner-title">Winner!</h2>
+      <p id="winner-sub" class="q-status"></p>
+      <button id="btn-again" class="btn primary big">Play again</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+</div>
+
+<script src="/board.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

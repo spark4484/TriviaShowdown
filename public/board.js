@@ -128,6 +128,7 @@
 
       // spaces
       this.spaceNodes = {};
+      this.hqBadges = {};
       this.data.nodes.forEach((n) => {
         if (n.type === 'hub') return;
         const g = el('g', { class: 'space', 'data-node': n.id }, this.layers.spaces);
@@ -163,6 +164,19 @@
               'font-size': 13, 'font-weight': 800, fill: '#0b0e18',
               'font-family': 'system-ui, sans-serif', 'pointer-events': 'none',
             }, g).textContent = cat.short.toUpperCase();
+
+            // Tick shown on the headquarters whose wedge you already hold, so
+            // it is obvious at a glance which ones you still need to visit.
+            const badge = el('g', { class: 'hq-badge', opacity: 0, 'pointer-events': 'none' }, g);
+            const bx = n.x + 17;
+            const by = n.y - 17;
+            el('circle', { cx: bx, cy: by, r: 8.5, fill: '#0d1120', stroke: '#ffffff', 'stroke-width': 1.5 }, badge);
+            el('path', {
+              d: `M ${bx - 4} ${by} l 2.8 3.2 l 5.2 -6.2`,
+              fill: 'none', stroke: '#ffffff', 'stroke-width': 2,
+              'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+            }, badge);
+            this.hqBadges[n.category] = badge;
           }
         }
         this.spaceNodes[n.id] = g;
@@ -219,6 +233,11 @@
 
       const selectable = new Set(opts.selectable || []);
       const picking = selectable.size > 0;
+
+      const you = state.players.find((p) => p.id === opts.youId);
+      for (const cat in this.hqBadges) {
+        this.hqBadges[cat].setAttribute('opacity', you && you.wedges[cat] ? 1 : 0);
+      }
 
       for (const id in this.spaceNodes) {
         const g = this.spaceNodes[id];

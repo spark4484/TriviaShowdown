@@ -8,9 +8,17 @@ const MAX_PLAYERS = 6;
 const REVEAL_MS = 3400;
 const MAX_LOG = 60;
 
+// Which difficulty tags each setting draws from.
+const DIFFICULTY_POOLS = {
+  easy: [1],
+  hard: [2],
+  mixed: [1, 2],
+};
+
 const DEFAULT_OPTIONS = {
   wedgesToWin: 6,
   answerSeconds: 30, // 0 = no limit
+  difficulty: 'hard',
 };
 
 function shuffle(list) {
@@ -162,6 +170,10 @@ class Game {
     const seconds = Number(options.answerSeconds);
     if ([3, 4, 5, 6].includes(wedges)) this.options.wedgesToWin = wedges;
     if ([0, 20, 30, 45, 60].includes(seconds)) this.options.answerSeconds = seconds;
+    if (DIFFICULTY_POOLS[options.difficulty]) {
+      this.options.difficulty = options.difficulty;
+      this.decks = CATEGORIES.map(() => []); // stale decks would hold the old tier
+    }
     return { ok: true };
   }
 
@@ -286,7 +298,10 @@ class Game {
 
   drawQuestion(category) {
     if (!this.decks[category] || this.decks[category].length === 0) {
-      const pool = QUESTIONS.map((q, i) => (q.c === category ? i : -1)).filter((i) => i >= 0);
+      const allowed = DIFFICULTY_POOLS[this.options.difficulty] || DIFFICULTY_POOLS.hard;
+      const pool = QUESTIONS
+        .map((q, i) => (q.c === category && allowed.includes(q.d) ? i : -1))
+        .filter((i) => i >= 0);
       this.decks[category] = shuffle(pool);
     }
     const idx = this.decks[category].pop();

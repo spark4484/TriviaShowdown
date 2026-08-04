@@ -159,6 +159,7 @@
       options: {
         wedgesToWin: Number($('#opt-wedges').value),
         answerSeconds: Number($('#opt-seconds').value),
+        difficulty: $('#opt-difficulty').value,
       },
     });
   });
@@ -206,6 +207,7 @@
 
   $('#opt-wedges').addEventListener('change', pushOptions);
   $('#opt-seconds').addEventListener('change', pushOptions);
+  $('#opt-difficulty').addEventListener('change', pushOptions);
   function pushOptions() {
     if (!app.code) return;
     send({
@@ -213,6 +215,7 @@
       options: {
         wedgesToWin: Number($('#opt-wedges').value),
         answerSeconds: Number($('#opt-seconds').value),
+        difficulty: $('#opt-difficulty').value,
       },
     });
   }
@@ -290,6 +293,7 @@
       : [];
     Board.render(s, {
       selectable,
+      youId: playerId,
       onSelect: (node) => send({ t: 'move', node }),
     });
   }
@@ -303,8 +307,21 @@
     const host = s.hostId === playerId;
     $('#opt-wedges').value = String(s.options.wedgesToWin);
     $('#opt-seconds').value = String(s.options.answerSeconds);
+    $('#opt-difficulty').value = s.options.difficulty;
     $('#opt-wedges').disabled = !host;
     $('#opt-seconds').disabled = !host;
+    $('#opt-difficulty').disabled = !host;
+    // Harder questions mean more missed turns, which stretches the game out a
+    // lot. Say so here rather than letting people find out an hour in.
+    const blurb = {
+      easy: 'General knowledge — most players will get a good share of these.',
+      hard: 'Pub-quiz final round. Expect to miss plenty.',
+      mixed: 'Draws from both tiers.',
+    }[s.options.difficulty] || '';
+    const slow = s.options.difficulty !== 'easy' && s.options.wedgesToWin >= 5;
+    $('#settings-note').textContent = blurb
+      + (slow ? ' At this wedge count that is a long session — 3 or 4 finishes in one sitting.' : '');
+
     $('#btn-start').disabled = !host;
     $('#btn-start').textContent = host ? 'Start game' : 'Waiting for the host…';
     $('#lobby-note').textContent = host
@@ -313,6 +330,13 @@
   }
 
   function renderPlayers(s) {
+    // Wedges only come from headquarters spaces, which is easy to miss - say so
+    // rather than leaving people wondering why the counter never moves.
+    const hint = $('#players-hint');
+    hint.hidden = s.phase !== 'playing';
+    hint.textContent = 'Wedges are won only on the six large headquarters spaces. '
+      + 'Every other correct answer just earns you another roll.';
+
     const list = $('#player-list');
     list.innerHTML = '';
     s.players.forEach((p) => {
@@ -326,10 +350,20 @@
       wheel.classList.add('pwheel');
       li.appendChild(wheel);
 
+      const info = document.createElement('div');
+      info.className = 'pinfo';
       const name = document.createElement('span');
       name.className = 'pname';
       name.textContent = p.name;
-      li.appendChild(name);
+      info.appendChild(name);
+
+      const sub = document.createElement('span');
+      sub.className = 'psub';
+      sub.textContent = p.asked
+        ? `${p.correct} of ${p.asked} correct`
+        : (s.phase === 'playing' ? 'no questions yet' : 'ready');
+      info.appendChild(sub);
+      li.appendChild(info);
 
       if (s.hostId === p.id) {
         const tag = document.createElement('span');
@@ -338,10 +372,16 @@
         li.appendChild(tag);
       }
 
-      const score = document.createElement('span');
+      const score = document.createElement('div');
       score.className = 'pscore';
       const won = p.wedges.filter(Boolean).length;
-      score.textContent = `${won}/${s.wedgesToWin}`;
+      const big = document.createElement('b');
+      big.textContent = `${won}/${s.wedgesToWin}`;
+      if (won > 0) big.classList.add('has-wedges');
+      const cap = document.createElement('span');
+      cap.textContent = won === 1 ? 'wedge' : 'wedges';
+      score.appendChild(big);
+      score.appendChild(cap);
       li.appendChild(score);
 
       list.appendChild(li);

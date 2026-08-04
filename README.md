@@ -6,7 +6,7 @@ One Node process serves both the game and the web client, so a single
 
 - Six categories, six wedges, a wheel with six spokes and a hub
 - Real board movement: you pick which way to go, and you can cut through the hub
-- Multiple-choice questions (240 of them) with an optional answer timer
+- 480 multiple-choice questions across two difficulty tiers, plus an answer timer
 - Room codes, live game log, chat, and reconnect-without-losing-your-seat
 - No build step, no database, one dependency (`ws`)
 
@@ -67,8 +67,28 @@ Special spaces:
   chooses the category for one final question. Get it right and you win; get it
   wrong and you have to leave and come back.
 
-A full six-wedge game runs long, same as the boxed version. Set **Wedges to win**
-to 3 or 4 in the lobby for something that finishes in a single sitting.
+### Difficulty
+
+The lobby has three settings, and **Hard** is the default:
+
+| Setting | Draws from | Feel |
+| --- | --- | --- |
+| Easy | 240 questions | General knowledge — most players get a good share |
+| Hard | 240 questions | Pub-quiz final round, with plausible distractors |
+| Mixed | all 480 | A bit of both |
+
+Difficulty has a real effect on pacing, because a wrong answer ends your turn.
+Median questions per two-player game, measured over simulated runs:
+
+| Answer accuracy | 3 wedges | 4 wedges | 6 wedges |
+| --- | --- | --- | --- |
+| 75% | 50 | 76 | 153 |
+| 50% | 89 | 102 | 268 |
+| 30% | 138 | 202 | 332 |
+
+So a full six-wedge game on Hard runs long, same as the boxed version on a slow
+night. Set **Wedges to win** to 3 or 4 for something that finishes in a single
+sitting — the lobby warns you when the combination is a marathon.
 
 ### If someone drops out
 
@@ -78,8 +98,10 @@ a **Skip turn** button, and any player can skip someone who is offline.
 
 ## Adding your own questions
 
-Everything lives in [server/questions.js](server/questions.js). Append entries in
-this shape — the first answer is the correct one, and the server shuffles the
+Everything lives in [server/questions.js](server/questions.js), split into an
+`EASY` and a `HARD` array. Append entries to whichever fits — the difficulty tag
+is applied automatically at the bottom of the file, so entries in both arrays
+look identical. The first answer is the correct one, and the server shuffles the
 options before sending them out:
 
 ```js

@@ -78,6 +78,14 @@
           </div>
           <div id="settings" class="settings">
             <label class="field row">
+              <span>Difficulty</span>
+              <select id="opt-difficulty">
+                <option value="easy">Easy</option>
+                <option value="hard" selected>Hard</option>
+                <option value="mixed">Mixed</option>
+              </select>
+            </label>
+            <label class="field row">
               <span>Wedges to win</span>
               <select id="opt-wedges">
                 <option value="3">3 &mdash; quick</option>
@@ -97,12 +105,14 @@
               </select>
             </label>
           </div>
+          <p id="settings-note" class="hint"></p>
           <button id="btn-start" class="btn primary wide">Start game</button>
           <p id="lobby-note" class="hint"></p>
         </div>
 
         <div class="panel grow">
           <h2>Players</h2>
+          <p id="players-hint" class="hint" hidden></p>
           <ul id="player-list" class="player-list"></ul>
         </div>
 

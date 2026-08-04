@@ -26,11 +26,19 @@ const MIME = {
 
 // ---------------------------------------------------------------- static ---
 function resolveStatic(urlPath) {
-  const clean = decodeURIComponent(urlPath.split('?')[0]);
+  let clean;
+  try {
+    clean = decodeURIComponent(urlPath.split('?')[0]);
+  } catch {
+    return null; // malformed percent-encoding, e.g. "/%"
+  }
+  if (clean.includes('\0')) return null;
   const rel = clean === '/' ? 'index.html' : clean.replace(/^\/+/, '');
   const full = path.join(PUBLIC_DIR, rel);
   const normalized = path.normalize(full);
-  if (!normalized.startsWith(PUBLIC_DIR)) return null; // path traversal guard
+  // Path traversal guard. The separator matters: a bare startsWith(PUBLIC_DIR)
+  // also accepts siblings like "<root>/public-secret/x".
+  if (normalized !== PUBLIC_DIR && !normalized.startsWith(PUBLIC_DIR + path.sep)) return null;
   return normalized;
 }
 

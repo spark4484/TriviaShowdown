@@ -6,7 +6,8 @@ One Node process serves both the game and the web client, so a single
 
 - Six categories, six wedges, a wheel with six spokes and a hub
 - Real board movement: you pick which way to go, and you can cut through the hub
-- 480 multiple-choice questions across two difficulty tiers, plus an answer timer
+- 780 multiple-choice questions across two difficulty tiers, plus an answer timer
+- Thumbs up/down on every question — enough downvotes and it stops being dealt
 - Room codes, live game log, chat, and reconnect-without-losing-your-seat
 - No build step, no database, one dependency (`ws`)
 
@@ -44,6 +45,9 @@ open for the whole session.
 | --- | --- | --- |
 | `PORT` | `3000` | Port to listen on |
 | `HOST` | `0.0.0.0` | Interface to bind |
+| `VOTES_FILE` | `data/votes.json` | Where question ratings are stored |
+| `QUESTION_RETIRE_DOWNS` | `3` | Downvotes before a question can be retired |
+| `QUESTION_RETIRE_RATIO` | `2` | How far downs must outweigh ups to retire |
 
 ## How to play
 
@@ -115,6 +119,33 @@ Restart the server to pick up changes. Each category is dealt from its own
 shuffled deck that only reshuffles once exhausted, so you will not see the same
 question twice in a game.
 
+## Rating questions
+
+Every question card has 👍 and 👎 buttons, and the **Questions** tab in the
+sidebar keeps the last dozen questions the room has seen so you can rate one
+after the card has gone. Clicking the same thumb twice takes your vote back.
+
+Ratings are global and permanent — they are shared across every room and stored
+in `data/votes.json`. Once a question reaches **3 downvotes with at least twice
+as many downs as ups**, the server quietly stops dealing it. Nothing is deleted,
+so raising `QUESTION_RETIRE_DOWNS` brings retired questions straight back.
+
+One vote per player per question, deduplicated per room. To see what people have
+been booing:
+
+```bash
+npm run ratings        # everything rated so far, worst first
+npm run ratings -- 20  # just the 20 worst
+```
+
+That report is the eviction shortlist: fix the wording or delete the entry from
+`server/questions.js`. Ratings are keyed on a hash of the question text, so
+reordering the file is safe, but rewording a question resets its score — which
+is what you want, since it is a different question afterwards.
+
+If every question in a category and tier ends up retired, the server logs a
+warning and deals from the unfiltered set rather than stranding the turn.
+
 ## Layout
 
 ```
@@ -124,6 +155,9 @@ server/
   game.js       turn state machine, scoring, timers
   board.js      wheel geometry and the movement graph
   questions.js  the question bank
+  votes.js      question ratings: tallies, persistence, retirement rule
+scripts/
+  ratings.js    "npm run ratings" - what players thought of each question
 public/
   index.html    all the screens
   app.js        client state, rendering, input

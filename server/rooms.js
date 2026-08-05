@@ -61,10 +61,16 @@ class RoomManager {
   broadcast(code, extra) {
     const room = this.get(code);
     if (!room) return;
-    const payload = JSON.stringify(Object.assign({ t: 'state', state: room.game.toJSON() }, extra || {}));
-    for (const set of room.sockets.values()) {
+    // Serialised per seat rather than once: everything is identical except each
+    // player's own question ratings. Six players max, so the cost is nothing.
+    for (const [playerId, set] of room.sockets) {
+      let payload = null;
       for (const ws of set) {
-        if (ws.readyState === 1) ws.send(payload);
+        if (ws.readyState !== 1) continue;
+        if (payload === null) {
+          payload = JSON.stringify(Object.assign({ t: 'state', state: room.game.toJSON(playerId) }, extra || {}));
+        }
+        ws.send(payload);
       }
     }
     room.lastSeen = Date.now();

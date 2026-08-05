@@ -120,6 +120,7 @@
           <div class="tabs">
             <button class="tab active" data-tab="log">Game log</button>
             <button class="tab" data-tab="chat">Chat</button>
+            <button class="tab" data-tab="rate">Questions</button>
           </div>
           <ul id="log-list" class="feed" data-pane="log"></ul>
           <div class="chat-pane" data-pane="chat" hidden>
@@ -128,6 +129,10 @@
               <input id="chat-input" type="text" maxlength="300" placeholder="Say something…" autocomplete="off" />
               <button class="btn small primary" type="submit">Send</button>
             </form>
+          </div>
+          <div class="rate-pane" data-pane="rate" hidden>
+            <p class="hint">Thumb down the duds. Questions that collect enough downvotes stop being dealt.</p>
+            <ul id="rate-list" class="feed rate-list"></ul>
           </div>
         </div>
       </aside>
@@ -144,7 +149,18 @@
       <div id="q-timer" class="q-timer"><i></i></div>
       <p id="q-text" class="q-text"></p>
       <div id="q-choices" class="q-choices"></div>
-      <p id="q-status" class="q-status"></p>
+      <div class="q-foot">
+        <p id="q-status" class="q-status"></p>
+        <div id="q-vote" class="vote" hidden>
+          <span class="vote-label">Good question?</span>
+          <button class="vote-btn" data-vote="1" type="button" title="Keep this question">
+            <span class="vote-icon" aria-hidden="true">&#128077;</span><span class="vote-count">0</span>
+          </button>
+          <button class="vote-btn down" data-vote="-1" type="button" title="Retire this question">
+            <span class="vote-icon" aria-hidden="true">&#128078;</span><span class="vote-count">0</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

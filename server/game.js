@@ -2,11 +2,16 @@
 
 const { BOARD, CATEGORIES, TYPE, reachable } = require('./board');
 const QUESTIONS = require('./questions');
+const { votes } = require('./votes');
 
 const PLAYER_COLORS = ['#ff5252', '#40c4ff', '#69f0ae', '#ffd740', '#b388ff', '#ff8a65'];
 const MAX_PLAYERS = 6;
 const REVEAL_MS = 3400;
 const MAX_LOG = 60;
+
+// How many of this room's questions stay open for rating. The card itself is
+// only up for a few seconds, so the Questions tab keeps recent ones thumbable.
+const MAX_RATEABLE = 12;
 
 // Which difficulty tags each setting draws from.
 const DIFFICULTY_POOLS = {
@@ -59,6 +64,14 @@ class Game {
 
     this.timer = null;
     this.decks = CATEGORIES.map(() => []);
+
+    // Questions this room has seen, newest first, and who voted what on each.
+    // Vote de-duplication is per room: the global tallies in votes.js are just
+    // counters, so this is what stops one player stuffing the ballot.
+    /** @type {Array<{id: string, c: number, q: string}>} */
+    this.rateable = [];
+    /** @type {Map<string, Map<string, -1|1>>} */
+    this.ballots = new Map();
   }
 
   // ------------------------------------------------------------- utilities
@@ -197,6 +210,9 @@ class Game {
     this.question = null;
     this.winnerId = null;
     this.decks = CATEGORIES.map(() => []);
+    // Fresh rating list, but keep the ballots: they are what stops a player
+    // voting twice on a question that comes round again in the next game.
+    this.rateable = [];
     this.clearTimer();
     this.deadline = null;
     this.addLog(`Game on! First to ${this.options.wedgesToWin} wedges and back to the hub wins.`);
@@ -299,9 +315,17 @@ class Game {
   drawQuestion(category) {
     if (!this.decks[category] || this.decks[category].length === 0) {
       const allowed = DIFFICULTY_POOLS[this.options.difficulty] || DIFFICULTY_POOLS.hard;
-      const pool = QUESTIONS
-        .map((q, i) => (q.c === category && allowed.includes(q.d) ? i : -1))
-        .filter((i) => i >= 0);
+      const tier = [];
+      QUESTIONS.forEach((q, i) => {
+        if (q.c === category && allowed.includes(q.d)) tier.push(i);
+      });
+      let pool = tier.filter((i) => !votes.isRetired(QUESTIONS[i].id));
+      if (pool.length === 0) {
+        // Players have thumbed down everything in this slice of the bank. A
+        // dud question still beats a turn that cannot resolve, so deal anyway.
+        console.warn(`[votes] every ${CATEGORIES[category].name} question at this difficulty is retired - ignoring ratings`);
+        pool = tier;
+      }
       this.decks[category] = shuffle(pool);
     }
     const idx = this.decks[category].pop();
@@ -313,6 +337,7 @@ class Game {
     const correct = raw.a[0];
     const choices = shuffle(raw.a);
     this.question = {
+      id: raw.id,
       category,
       text: raw.q,
       choices,
@@ -324,6 +349,7 @@ class Game {
       revealed: false,
       timedOut: false,
     };
+    this.openForRating(raw);
     player.asked++;
     this.step = 'answer';
     const label = isFinal ? 'the winning question' : isHq ? `a ${CATEGORIES[category].name} headquarters question` : `a ${CATEGORIES[category].name} question`;
@@ -422,6 +448,65 @@ class Game {
     return player.wedges.filter(Boolean).length;
   }
 
+  // ------------------------------------------------------------- rating ops
+  /** Put a freshly dealt question on the room's rateable list. */
+  openForRating(raw) {
+    const already = this.rateable.findIndex((r) => r.id === raw.id);
+    if (already >= 0) this.rateable.splice(already, 1); // re-asked: move it to the front
+    this.rateable.unshift({ id: raw.id, c: raw.c, q: raw.q });
+    if (this.rateable.length > MAX_RATEABLE) this.rateable.length = MAX_RATEABLE;
+  }
+
+  /**
+   * Thumb a question up or down. Voting the same way twice clears the vote, so
+   * the buttons act as toggles. Anyone in the room may rate any question the
+   * room has seen recently - it is the question being judged, not the answer.
+   */
+  voteQuestion(byId, questionId, vote) {
+    const player = this.player(byId);
+    if (!player) return { ok: false, error: 'You are not in this room.' };
+    if (!this.rateable.some((r) => r.id === questionId)) {
+      return { ok: false, error: 'That question is no longer open for rating.' };
+    }
+    const wanted = Number(vote) > 0 ? 1 : Number(vote) < 0 ? -1 : 0;
+
+    let ballot = this.ballots.get(questionId);
+    if (!ballot) {
+      ballot = new Map();
+      this.ballots.set(questionId, ballot);
+    }
+    const before = ballot.get(byId) || 0;
+    const after = wanted === before ? 0 : wanted;
+    if (after === 0) ballot.delete(byId);
+    else ballot.set(byId, after);
+
+    votes.record(questionId, before, after);
+    return { ok: true };
+  }
+
+  /** This room's recent questions with global tallies and the viewer's vote. */
+  ratingsFor(viewerId) {
+    return this.rateable.map((r) => this.ratingOf(r.id, viewerId, r));
+  }
+
+  /**
+   * @param entry the rateable-list entry, or null when the caller already has
+   *   the wording (the live question card) and only wants the counts.
+   */
+  ratingOf(questionId, viewerId, entry) {
+    const tally = votes.tally(questionId);
+    const ballot = this.ballots.get(questionId);
+    return {
+      id: questionId,
+      category: entry ? entry.c : null,
+      text: entry ? entry.q : null,
+      up: tally.up,
+      down: tally.down,
+      mine: (ballot && ballot.get(viewerId)) || 0,
+      retired: votes.isRetired(questionId),
+    };
+  }
+
   /** Remove a player mid-game (used when a seat is abandoned by request). */
   kick(byId, targetId) {
     if (byId !== this.hostId) return { ok: false, error: 'Only the host can remove players.' };
@@ -444,7 +529,8 @@ class Game {
   }
 
   // ------------------------------------------------------------ serialising
-  toJSON() {
+  /** @param {string} [viewerId] whose ratings to mark as "mine" */
+  toJSON(viewerId) {
     const cur = this.current();
     return {
       code: this.code,
@@ -475,6 +561,8 @@ class Game {
         : null,
       question: this.question
         ? {
+            id: this.question.id,
+            rating: this.ratingOf(this.question.id, viewerId, null),
             category: this.question.category,
             text: this.question.text,
             choices: this.question.choices,
@@ -489,6 +577,7 @@ class Game {
           }
         : null,
       winnerId: this.winnerId,
+      ratings: this.ratingsFor(viewerId),
       log: this.log.slice(-24),
       serverTime: this.now(),
     };

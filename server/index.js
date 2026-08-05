@@ -7,6 +7,7 @@ const { WebSocketServer } = require('ws');
 
 const { RoomManager } = require('./rooms');
 const { publicBoard } = require('./board');
+const { votes } = require('./votes');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -154,6 +155,7 @@ const GAME_ACTIONS = {
   skip: (game, id) => game.skip(id),
   kick: (game, id, msg) => game.kick(id, msg.playerId),
   playAgain: (game, id) => game.reset(id),
+  voteQuestion: (game, id, msg) => game.voteQuestion(id, String(msg.questionId || ''), msg.vote),
 };
 
 wss.on('connection', (ws) => {
@@ -223,6 +225,7 @@ server.listen(PORT, HOST, () => {
 function shutdown() {
   console.log('\nShutting down...');
   clearInterval(heartbeat);
+  votes.close(); // ratings are written lazily; make sure the last ones land
   for (const ws of wss.clients) ws.close(1001, 'server shutting down');
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 2000).unref();

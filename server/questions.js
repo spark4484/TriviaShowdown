@@ -10,8 +10,13 @@
  *             3 Arts & Literature | 4 Science & Nature | 5 Sports & Leisure
  *
  * Two difficulty tiers, chosen in the lobby. Add your own by appending to
- * whichever array fits - the difficulty tag is applied automatically at the
- * bottom of this file, so entries in both arrays look identical.
+ * whichever array fits - the difficulty tag and a stable id are applied
+ * automatically at the bottom of this file, so entries in both arrays look
+ * identical.
+ *
+ * Players rate questions in game (see votes.js) and the ratings are keyed on
+ * that id, which is a hash of the question text. So: reorder freely, but treat
+ * the wording as the identity - editing it starts the rating over.
  */
 
 // --------------------------------------------------------------------------
@@ -59,6 +64,31 @@ const EASY = [
   { c: 0, q: "Which strait separates Alaska from Russia?", a: ["The Bering Strait", "The Denmark Strait", "The Davis Strait", "The Cook Strait"] },
   { c: 0, q: "Which continent contains the Serengeti?", a: ["Africa", "Asia", "South America", "Australia"] },
   { c: 0, q: "Which country has the most inhabited islands, numbering over 17,000?", a: ["Indonesia", "The Philippines", "Japan", "Greece"] },
+  { c: 0, q: "In which city is the Eiffel Tower?", a: ["Paris", "Lyon", "Brussels", "Geneva"] },
+  { c: 0, q: "What is the capital of Japan?", a: ["Tokyo", "Osaka", "Kyoto", "Yokohama"] },
+  { c: 0, q: "Which continent has no permanent human population?", a: ["Antarctica", "Australia", "South America", "Africa"] },
+  { c: 0, q: "Which is the longest river in Africa?", a: ["The Nile", "The Congo", "The Niger", "The Orange"] },
+  { c: 0, q: "Which US city is nicknamed the Big Apple?", a: ["New York", "Chicago", "Boston", "Philadelphia"] },
+  { c: 0, q: "What is the capital of Spain?", a: ["Madrid", "Barcelona", "Valencia", "Seville"] },
+  { c: 0, q: "Which ocean lies between Europe and North America?", a: ["The Atlantic", "The Pacific", "The Indian", "The Arctic"] },
+  { c: 0, q: "Mount Kilimanjaro is in which country?", a: ["Tanzania", "Kenya", "Uganda", "Rwanda"] },
+  { c: 0, q: "Which European country is shaped like a boot?", a: ["Italy", "Portugal", "Greece", "Croatia"] },
+  { c: 0, q: "What is the capital of Egypt?", a: ["Cairo", "Alexandria", "Luxor", "Giza"] },
+  { c: 0, q: "Which country has the largest population in the world?", a: ["India", "China", "The United States", "Indonesia"] },
+  { c: 0, q: "The Amazon rainforest lies mostly in which country?", a: ["Brazil", "Peru", "Colombia", "Venezuela"] },
+  { c: 0, q: "Which is the smallest continent?", a: ["Australia", "Europe", "Antarctica", "South America"] },
+  { c: 0, q: "What is the capital of Italy?", a: ["Rome", "Milan", "Naples", "Florence"] },
+  { c: 0, q: "What is the highest mountain above sea level?", a: ["Mount Everest", "K2", "Kangchenjunga", "Denali"] },
+  { c: 0, q: "The city of Marrakesh is in which country?", a: ["Morocco", "Algeria", "Tunisia", "Egypt"] },
+  { c: 0, q: "What is the capital of Russia?", a: ["Moscow", "St Petersburg", "Kazan", "Novosibirsk"] },
+  { c: 0, q: "Which river runs through London?", a: ["The Thames", "The Severn", "The Mersey", "The Trent"] },
+  { c: 0, q: "Nairobi is the capital of which country?", a: ["Kenya", "Tanzania", "Uganda", "Zambia"] },
+  { c: 0, q: "Which desert covers much of Mongolia and northern China?", a: ["The Gobi", "The Taklamakan", "The Karakum", "The Thar"] },
+  { c: 0, q: "Which is the smallest ocean?", a: ["The Arctic", "The Southern", "The Indian", "The Atlantic"] },
+  { c: 0, q: "The Taj Mahal is in which country?", a: ["India", "Pakistan", "Iran", "Bangladesh"] },
+  { c: 0, q: "What is the capital of Greece?", a: ["Athens", "Thessaloniki", "Patras", "Heraklion"] },
+  { c: 0, q: "Which country lies directly south of the United States?", a: ["Mexico", "Cuba", "Guatemala", "Belize"] },
+  { c: 0, q: "Which continent has the most countries?", a: ["Africa", "Europe", "Asia", "South America"] },
 
   // ----------------------------------------------------------- Entertainment
   { c: 1, q: "Who directed the 1975 film Jaws?", a: ["Steven Spielberg", "George Lucas", "Martin Scorsese", "Francis Ford Coppola"] },
@@ -101,6 +131,31 @@ const EASY = [
   { c: 1, q: "Which film features the song \"Somewhere Over the Rainbow\"?", a: ["The Wizard of Oz", "Mary Poppins", "Singin' in the Rain", "The Sound of Music"] },
   { c: 1, q: "Which anime studio produced Spirited Away?", a: ["Studio Ghibli", "Toei Animation", "Madhouse", "Kyoto Animation"] },
   { c: 1, q: "Who played Captain Jack Sparrow in Pirates of the Caribbean?", a: ["Johnny Depp", "Orlando Bloom", "Geoffrey Rush", "Javier Bardem"] },
+  { c: 1, q: "Which superhero is known as the Man of Steel?", a: ["Superman", "Batman", "Iron Man", "Thor"] },
+  { c: 1, q: "Who sang the 2010 hit \"Rolling in the Deep\"?", a: ["Adele", "Amy Winehouse", "Duffy", "Florence Welch"] },
+  { c: 1, q: "In The Simpsons, what is Homer's wife called?", a: ["Marge", "Maude", "Patty", "Selma"] },
+  { c: 1, q: "In a Pixar film, which clownfish does Marlin search for?", a: ["Nemo", "Dory", "Bruce", "Gill"] },
+  { c: 1, q: "Which band recorded \"Let It Be\"?", a: ["The Beatles", "The Beach Boys", "The Kinks", "The Byrds"] },
+  { c: 1, q: "Who played Hermione Granger in the Harry Potter films?", a: ["Emma Watson", "Emma Stone", "Bonnie Wright", "Evanna Lynch"] },
+  { c: 1, q: "Which Spanish series follows a heist crew in red jumpsuits and Dalí masks?", a: ["Money Heist", "Elite", "Narcos", "The Bridge"] },
+  { c: 1, q: "What colour is SpongeBob SquarePants?", a: ["Yellow", "Orange", "Green", "Pink"] },
+  { c: 1, q: "Which musical features the song \"Do-Re-Mi\"?", a: ["The Sound of Music", "Oliver!", "My Fair Lady", "Mary Poppins"] },
+  { c: 1, q: "Which singer is known as the King of Rock and Roll?", a: ["Elvis Presley", "Chuck Berry", "Little Richard", "Buddy Holly"] },
+  { c: 1, q: "Which company created the video game character Mario?", a: ["Nintendo", "Sega", "Sony", "Atari"] },
+  { c: 1, q: "Katniss Everdeen is the heroine of which film series?", a: ["The Hunger Games", "Divergent", "The Maze Runner", "Twilight"] },
+  { c: 1, q: "Which 1993 Spielberg film features cloned dinosaurs?", a: ["Jurassic Park", "King Kong", "Godzilla", "The Lost World"] },
+  { c: 1, q: "Which singer released the album \"1989\"?", a: ["Taylor Swift", "Katy Perry", "Ariana Grande", "Selena Gomez"] },
+  { c: 1, q: "In Disney's Frozen, what is the name of Elsa's sister?", a: ["Anna", "Ariel", "Aurora", "Elena"] },
+  { c: 1, q: "Sheldon Cooper is a character in which sitcom?", a: ["The Big Bang Theory", "Community", "Scrubs", "Parks and Recreation"] },
+  { c: 1, q: "Who played Rocky Balboa?", a: ["Sylvester Stallone", "Arnold Schwarzenegger", "Bruce Willis", "Kurt Russell"] },
+  { c: 1, q: "Which reggae musician recorded \"No Woman, No Cry\"?", a: ["Bob Marley", "Peter Tosh", "Jimmy Cliff", "Toots Hibbert"] },
+  { c: 1, q: "Which animated film features an ogre and a talking donkey?", a: ["Shrek", "Madagascar", "Ice Age", "Kung Fu Panda"] },
+  { c: 1, q: "Which rapper released The Marshall Mathers LP?", a: ["Eminem", "Dr. Dre", "Jay-Z", "Nas"] },
+  { c: 1, q: "Which UK talent show did Simon Cowell launch in 2004?", a: ["The X Factor", "Britain's Got Talent", "Pop Idol", "The Voice"] },
+  { c: 1, q: "Which film has grossed the most at the worldwide box office?", a: ["Avatar", "Titanic", "Avengers: Endgame", "Star Wars: The Force Awakens"] },
+  { c: 1, q: "Who played Captain America in the Marvel films?", a: ["Chris Evans", "Chris Pratt", "Chris Hemsworth", "Sebastian Stan"] },
+  { c: 1, q: "Mick Jagger and Keith Richards founded which band?", a: ["The Rolling Stones", "The Who", "The Animals", "The Yardbirds"] },
+  { c: 1, q: "Which Christmas film stars Macaulay Culkin as a boy left behind?", a: ["Home Alone", "Elf", "Jingle All the Way", "The Santa Clause"] },
 
   // ----------------------------------------------------------------- History
   { c: 2, q: "In which year did the Second World War end?", a: ["1945", "1944", "1946", "1939"] },
@@ -143,6 +198,31 @@ const EASY = [
   { c: 2, q: "The Renaissance began in which country?", a: ["Italy", "France", "England", "Germany"] },
   { c: 2, q: "Who was the Macedonian king who conquered the Persian Empire?", a: ["Alexander the Great", "Philip II", "Darius III", "Xerxes"] },
   { c: 2, q: "In which year did the Chernobyl nuclear disaster occur?", a: ["1986", "1979", "1991", "1983"] },
+  { c: 2, q: "Which ship carried the Pilgrims to America in 1620?", a: ["The Mayflower", "The Golden Hind", "The Santa María", "The Endeavour"] },
+  { c: 2, q: "In which year did the American Civil War begin?", a: ["1861", "1848", "1776", "1877"] },
+  { c: 2, q: "Who is credited with inventing the telephone?", a: ["Alexander Graham Bell", "Thomas Edison", "Nikola Tesla", "Guglielmo Marconi"] },
+  { c: 2, q: "Who led Nazi Germany during the Second World War?", a: ["Adolf Hitler", "Hermann Göring", "Heinrich Himmler", "Joseph Goebbels"] },
+  { c: 2, q: "Who led the Soviet Union through most of the Second World War?", a: ["Joseph Stalin", "Vladimir Lenin", "Leon Trotsky", "Nikita Khrushchev"] },
+  { c: 2, q: "Which structure was built to defend China from northern invaders?", a: ["The Great Wall", "The Forbidden City", "The Terracotta Army", "The Grand Canal"] },
+  { c: 2, q: "Who was the first human in space?", a: ["Yuri Gagarin", "Alan Shepard", "John Glenn", "Valentina Tereshkova"] },
+  { c: 2, q: "Which US president resigned over the Watergate scandal?", a: ["Richard Nixon", "Gerald Ford", "Lyndon Johnson", "Jimmy Carter"] },
+  { c: 2, q: "The Aztec empire was centred on which modern-day country?", a: ["Mexico", "Peru", "Guatemala", "Colombia"] },
+  { c: 2, q: "Who wrote a famous diary while hiding from the Nazis in Amsterdam?", a: ["Anne Frank", "Etty Hillesum", "Miep Gies", "Sophie Scholl"] },
+  { c: 2, q: "Christopher Columbus sailed in 1492 under the flag of which country?", a: ["Spain", "Portugal", "Italy", "England"] },
+  { c: 2, q: "In which year did the First World War begin?", a: ["1914", "1912", "1918", "1905"] },
+  { c: 2, q: "Who delivered the \"I Have a Dream\" speech in 1963?", a: ["Martin Luther King Jr.", "Malcolm X", "Rosa Parks", "Jesse Jackson"] },
+  { c: 2, q: "The Vikings came from which region of Europe?", a: ["Scandinavia", "The Balkans", "Iberia", "The Baltic states"] },
+  { c: 2, q: "Who was the first woman to win a Nobel Prize?", a: ["Marie Curie", "Dorothy Hodgkin", "Irène Joliot-Curie", "Lise Meitner"] },
+  { c: 2, q: "Which US founding document begins \"We the People\"?", a: ["The Constitution", "The Declaration of Independence", "The Bill of Rights", "The Articles of Confederation"] },
+  { c: 2, q: "In which year did Apollo 11 land on the Moon?", a: ["1969", "1965", "1972", "1961"] },
+  { c: 2, q: "Which English queen reigned when the Spanish Armada was defeated?", a: ["Elizabeth I", "Mary I", "Anne", "Victoria"] },
+  { c: 2, q: "The Parthenon stands in which ancient city?", a: ["Athens", "Rome", "Sparta", "Corinth"] },
+  { c: 2, q: "Which country built and tested the first atomic bomb?", a: ["The United States", "The Soviet Union", "Germany", "Britain"] },
+  { c: 2, q: "Which Roman ruler was assassinated on the Ides of March?", a: ["Julius Caesar", "Augustus", "Nero", "Caligula"] },
+  { c: 2, q: "Which two Japanese cities were struck by atomic bombs in 1945?", a: ["Hiroshima and Nagasaki", "Tokyo and Osaka", "Kyoto and Kobe", "Nagoya and Sapporo"] },
+  { c: 2, q: "The Silk Road linked Europe with which country?", a: ["China", "India", "Japan", "Egypt"] },
+  { c: 2, q: "Which US president introduced the New Deal?", a: ["Franklin D. Roosevelt", "Herbert Hoover", "Harry Truman", "Woodrow Wilson"] },
+  { c: 2, q: "Who is credited with inventing the printing press in Europe?", a: ["Johannes Gutenberg", "William Caxton", "Aldus Manutius", "Johann Fust"] },
 
   // ------------------------------------------------------- Arts & Literature
   { c: 3, q: "Who painted the Mona Lisa?", a: ["Leonardo da Vinci", "Michelangelo", "Raphael", "Titian"] },
@@ -185,6 +265,31 @@ const EASY = [
   { c: 3, q: "Which American painter is known for his drip technique?", a: ["Jackson Pollock", "Willem de Kooning", "Mark Rothko", "Franz Kline"] },
   { c: 3, q: "Who wrote The Canterbury Tales?", a: ["Geoffrey Chaucer", "Thomas Malory", "John Milton", "Edmund Spenser"] },
   { c: 3, q: "Which artist painted the Water Lilies series?", a: ["Claude Monet", "Édouard Manet", "Pierre-Auguste Renoir", "Edgar Degas"] },
+  { c: 3, q: "Who wrote Oliver Twist?", a: ["Charles Dickens", "Thomas Hardy", "Anthony Trollope", "Wilkie Collins"] },
+  { c: 3, q: "Which Shakespeare play features three witches and a Scottish king?", a: ["Macbeth", "King Lear", "Othello", "Julius Caesar"] },
+  { c: 3, q: "Who wrote The Cat in the Hat?", a: ["Dr. Seuss", "Roald Dahl", "Shel Silverstein", "Maurice Sendak"] },
+  { c: 3, q: "Who wrote Alice's Adventures in Wonderland?", a: ["Lewis Carroll", "J. M. Barrie", "Kenneth Grahame", "Edward Lear"] },
+  { c: 3, q: "Who wrote The Chronicles of Narnia?", a: ["C. S. Lewis", "J. R. R. Tolkien", "Philip Pullman", "Susan Cooper"] },
+  { c: 3, q: "Which Roald Dahl book features a golden ticket and a chocolate factory?", a: ["Charlie and the Chocolate Factory", "James and the Giant Peach", "Matilda", "The BFG"] },
+  { c: 3, q: "Who wrote Moby-Dick?", a: ["Herman Melville", "Nathaniel Hawthorne", "Jack London", "Washington Irving"] },
+  { c: 3, q: "Which poet is traditionally credited with the Iliad?", a: ["Homer", "Virgil", "Ovid", "Hesiod"] },
+  { c: 3, q: "Who wrote Frankenstein?", a: ["Mary Shelley", "Bram Stoker", "Emily Brontë", "Ann Radcliffe"] },
+  { c: 3, q: "The Uffizi Gallery is in which city?", a: ["Florence", "Rome", "Venice", "Milan"] },
+  { c: 3, q: "Who wrote Little Women?", a: ["Louisa May Alcott", "Harriet Beecher Stowe", "Willa Cather", "Edith Wharton"] },
+  { c: 3, q: "Who wrote The Adventures of Huckleberry Finn?", a: ["Mark Twain", "Jack London", "O. Henry", "Stephen Crane"] },
+  { c: 3, q: "Who composed the ballet Swan Lake?", a: ["Pyotr Ilyich Tchaikovsky", "Sergei Prokofiev", "Igor Stravinsky", "Aram Khachaturian"] },
+  { c: 3, q: "Who wrote the play A Streetcar Named Desire?", a: ["Tennessee Williams", "Arthur Miller", "Eugene O'Neill", "Edward Albee"] },
+  { c: 3, q: "Bilbo Baggins is the hero of which novel?", a: ["The Hobbit", "The Silmarillion", "Watership Down", "The Sword in the Stone"] },
+  { c: 3, q: "Who wrote the Twilight novels?", a: ["Stephenie Meyer", "Suzanne Collins", "Veronica Roth", "Cassandra Clare"] },
+  { c: 3, q: "Which poet wrote \"I wandered lonely as a cloud\"?", a: ["William Wordsworth", "Samuel Taylor Coleridge", "John Keats", "Lord Byron"] },
+  { c: 3, q: "Who wrote The Handmaid's Tale?", a: ["Margaret Atwood", "Alice Munro", "Doris Lessing", "Ursula K. Le Guin"] },
+  { c: 3, q: "Claude Monet is associated with which art movement?", a: ["Impressionism", "Surrealism", "Baroque", "Expressionism"] },
+  { c: 3, q: "Who wrote the Discworld novels?", a: ["Terry Pratchett", "Douglas Adams", "Neil Gaiman", "Robert Rankin"] },
+  { c: 3, q: "Who wrote Charlotte's Web?", a: ["E. B. White", "Beatrix Potter", "Kenneth Grahame", "A. A. Milne"] },
+  { c: 3, q: "Who wrote the novel Dracula?", a: ["Bram Stoker", "Sheridan Le Fanu", "Mary Shelley", "H. P. Lovecraft"] },
+  { c: 3, q: "Which Japanese art form is the craft of folding paper?", a: ["Origami", "Ikebana", "Kirigami", "Kintsugi"] },
+  { c: 3, q: "Who wrote the Percy Jackson novels?", a: ["Rick Riordan", "Eoin Colfer", "Christopher Paolini", "Garth Nix"] },
+  { c: 3, q: "Who painted The Birth of Venus?", a: ["Sandro Botticelli", "Titian", "Giotto", "Caravaggio"] },
 
   // ------------------------------------------------------- Science & Nature
   { c: 4, q: "What is the chemical symbol for gold?", a: ["Au", "Ag", "Go", "Gd"] },
@@ -227,6 +332,31 @@ const EASY = [
   { c: 4, q: "How many planets are in our solar system?", a: ["Eight", "Nine", "Seven", "Ten"] },
   { c: 4, q: "Which insect produces honey?", a: ["The bee", "The wasp", "The ant", "The hornet"] },
   { c: 4, q: "Which part of the plant conducts photosynthesis primarily?", a: ["The leaf", "The root", "The stem", "The flower"] },
+  { c: 4, q: "What is the chemical formula for water?", a: ["H2O", "CO2", "O2", "H2O2"] },
+  { c: 4, q: "Which planet is closest to the Sun?", a: ["Mercury", "Venus", "Mars", "Earth"] },
+  { c: 4, q: "How many colours are traditionally counted in a rainbow?", a: ["Seven", "Five", "Six", "Nine"] },
+  { c: 4, q: "Which gas do humans need to breathe to survive?", a: ["Oxygen", "Nitrogen", "Helium", "Carbon dioxide"] },
+  { c: 4, q: "At what temperature in Celsius does water boil at sea level?", a: ["100 degrees", "90 degrees", "120 degrees", "80 degrees"] },
+  { c: 4, q: "Which animal is known as the ship of the desert?", a: ["The camel", "The horse", "The donkey", "The ox"] },
+  { c: 4, q: "Which is the largest species of big cat?", a: ["The tiger", "The lion", "The jaguar", "The leopard"] },
+  { c: 4, q: "What is at the centre of an atom?", a: ["The nucleus", "An electron", "A neutrino", "A molecule"] },
+  { c: 4, q: "What do caterpillars turn into?", a: ["Butterflies", "Beetles", "Dragonflies", "Grasshoppers"] },
+  { c: 4, q: "Which force keeps us on the ground?", a: ["Gravity", "Magnetism", "Friction", "Inertia"] },
+  { c: 4, q: "What is the process by which liquid water turns into vapour called?", a: ["Evaporation", "Condensation", "Precipitation", "Sublimation"] },
+  { c: 4, q: "Which blood vessels carry blood away from the heart?", a: ["Arteries", "Veins", "Capillaries", "Venules"] },
+  { c: 4, q: "What is the tallest living animal?", a: ["The giraffe", "The elephant", "The ostrich", "The moose"] },
+  { c: 4, q: "Which vitamin is abundant in oranges and lemons?", a: ["Vitamin C", "Vitamin A", "Vitamin B12", "Vitamin E"] },
+  { c: 4, q: "What is the name of the galaxy containing our solar system?", a: ["The Milky Way", "Andromeda", "The Whirlpool", "Triangulum"] },
+  { c: 4, q: "How many hearts does an octopus have?", a: ["Three", "One", "Two", "Five"] },
+  { c: 4, q: "What is the scientific study of weather called?", a: ["Meteorology", "Geology", "Astronomy", "Ecology"] },
+  { c: 4, q: "Which is the hottest planet in the solar system?", a: ["Venus", "Mercury", "Mars", "Jupiter"] },
+  { c: 4, q: "The cochlea is part of which organ?", a: ["The ear", "The eye", "The nose", "The throat"] },
+  { c: 4, q: "What are baby frogs called?", a: ["Tadpoles", "Fry", "Nymphs", "Larvae"] },
+  { c: 4, q: "Which metal is most commonly used in electrical wiring?", a: ["Copper", "Iron", "Tin", "Zinc"] },
+  { c: 4, q: "What is the basic structural unit of all living things?", a: ["The cell", "The atom", "The molecule", "The tissue"] },
+  { c: 4, q: "Which is the largest living reptile?", a: ["The saltwater crocodile", "The Komodo dragon", "The green anaconda", "The leatherback turtle"] },
+  { c: 4, q: "What is the process plants use to make food from sunlight?", a: ["Photosynthesis", "Respiration", "Digestion", "Fermentation"] },
+  { c: 4, q: "Roughly how long does the Earth take to orbit the Sun?", a: ["365 days", "180 days", "500 days", "30 days"] },
 
   // -------------------------------------------------------- Sports & Leisure
   { c: 5, q: "How many players from each team are on the pitch in a soccer match?", a: ["Eleven", "Ten", "Twelve", "Nine"] },
@@ -269,6 +399,31 @@ const EASY = [
   { c: 5, q: "Which Olympic sport combines cross-country skiing and rifle shooting?", a: ["Biathlon", "Nordic combined", "Pentathlon", "Skiathlon"] },
   { c: 5, q: "How many players per team take the field in rugby union?", a: ["15", "13", "11", "17"] },
   { c: 5, q: "In which sport would you use a foil, épée or sabre?", a: ["Fencing", "Archery", "Javelin", "Shooting"] },
+  { c: 5, q: "How many points is a free throw worth in basketball?", a: ["One", "Two", "Three", "Four"] },
+  { c: 5, q: "The Ryder Cup is contested in which sport?", a: ["Golf", "Tennis", "Rowing", "Sailing"] },
+  { c: 5, q: "How many players from a baseball team take the field on defence?", a: ["Nine", "Eight", "Ten", "Eleven"] },
+  { c: 5, q: "Which sport is Canada's official national winter sport?", a: ["Ice hockey", "Curling", "Lacrosse", "Skiing"] },
+  { c: 5, q: "What is the highest number on a standard dartboard?", a: ["20", "19", "25", "21"] },
+  { c: 5, q: "How many periods are played in a standard ice hockey game?", a: ["Three", "Two", "Four", "Five"] },
+  { c: 5, q: "The Davis Cup is a team competition in which sport?", a: ["Tennis", "Golf", "Cricket", "Rugby"] },
+  { c: 5, q: "How many players in total are on court in a doubles tennis match?", a: ["Four", "Two", "Six", "Eight"] },
+  { c: 5, q: "Which flag signals the end of a Formula 1 race?", a: ["The chequered flag", "The yellow flag", "The red flag", "The blue flag"] },
+  { c: 5, q: "The terms \"strike\" and \"spare\" belong to which sport?", a: ["Bowling", "Baseball", "Curling", "Darts"] },
+  { c: 5, q: "How many points is a field goal worth in American football?", a: ["Three", "Two", "Six", "One"] },
+  { c: 5, q: "In soccer, what card does a referee show to send a player off?", a: ["A red card", "A yellow card", "A blue card", "A black card"] },
+  { c: 5, q: "Which board game uses the terms \"check\" and \"checkmate\"?", a: ["Chess", "Draughts", "Backgammon", "Go"] },
+  { c: 5, q: "How many runners make up a relay team in athletics?", a: ["Four", "Three", "Five", "Six"] },
+  { c: 5, q: "Which trophy is awarded to the winner of the Super Bowl?", a: ["The Vince Lombardi Trophy", "The Larry O'Brien Trophy", "The Commissioner's Trophy", "The Stanley Cup"] },
+  { c: 5, q: "In golf, what is a score of one under par on a hole called?", a: ["A birdie", "An eagle", "A bogey", "An albatross"] },
+  { c: 5, q: "How many balls are on the table at the start of eight-ball pool, including the cue ball?", a: ["16", "15", "10", "21"] },
+  { c: 5, q: "The martial art of kung fu originated in which country?", a: ["China", "Japan", "Korea", "Vietnam"] },
+  { c: 5, q: "How many players are in a cricket team?", a: ["Eleven", "Nine", "Twelve", "Ten"] },
+  { c: 5, q: "Which famous motor race is held at Indianapolis each May?", a: ["The Indianapolis 500", "The Daytona 500", "The Le Mans 24 Hours", "The Baja 1000"] },
+  { c: 5, q: "Which piece of sports equipment is covered in dimples?", a: ["A golf ball", "A cricket ball", "A baseball", "A squash ball"] },
+  { c: 5, q: "In which sport would you perform a slam dunk?", a: ["Basketball", "Volleyball", "Handball", "Netball"] },
+  { c: 5, q: "The Six Nations Championship is played in which sport?", a: ["Rugby union", "Football", "Cricket", "Hockey"] },
+  { c: 5, q: "How many tiles does each player hold at a time in Scrabble?", a: ["Seven", "Six", "Eight", "Ten"] },
+  { c: 5, q: "In soccer, what is scoring three goals in one match called?", a: ["A hat-trick", "A treble", "A triple", "A trifecta"] },
 ];
 
 // --------------------------------------------------------------------------
@@ -317,6 +472,31 @@ const HARD = [
   { c: 0, q: "Which is the largest lake in Africa by surface area?", a: ["Lake Victoria", "Lake Tanganyika", "Lake Malawi", "Lake Chad"] },
   { c: 0, q: "Which is the largest country lying entirely within Europe?", a: ["Ukraine", "France", "Spain", "Poland"] },
   { c: 0, q: "Which line of latitude passes through central Australia?", a: ["The Tropic of Capricorn", "The Tropic of Cancer", "The Equator", "The Antarctic Circle"] },
+  { c: 0, q: "What is the capital of Kazakhstan?", a: ["Astana", "Almaty", "Bishkek", "Tashkent"] },
+  { c: 0, q: "Which is the world's highest capital city by elevation?", a: ["La Paz", "Quito", "Bogotá", "Kathmandu"] },
+  { c: 0, q: "Which river flows through Baghdad?", a: ["The Tigris", "The Euphrates", "The Jordan", "The Karun"] },
+  { c: 0, q: "Counting polar deserts, which is the largest desert on Earth?", a: ["Antarctica", "The Sahara", "The Arctic", "The Gobi"] },
+  { c: 0, q: "Which African country has the most pyramids?", a: ["Sudan", "Egypt", "Libya", "Ethiopia"] },
+  { c: 0, q: "What is the currency of Poland?", a: ["The złoty", "The koruna", "The forint", "The leu"] },
+  { c: 0, q: "Ben Nevis is the highest peak in which part of the United Kingdom?", a: ["Scotland", "Wales", "England", "Northern Ireland"] },
+  { c: 0, q: "Which is the second largest country in Africa by area?", a: ["The Democratic Republic of the Congo", "Sudan", "Libya", "Chad"] },
+  { c: 0, q: "Which strait separates New Zealand's North and South Islands?", a: ["The Cook Strait", "The Bass Strait", "The Torres Strait", "The Foveaux Strait"] },
+  { c: 0, q: "The source of the Amazon River lies in which country?", a: ["Peru", "Brazil", "Ecuador", "Colombia"] },
+  { c: 0, q: "Which is the largest country in the Caribbean by area?", a: ["Cuba", "The Dominican Republic", "Haiti", "Jamaica"] },
+  { c: 0, q: "Counting its overseas territories, which country spans the most time zones?", a: ["France", "Russia", "The United States", "Britain"] },
+  { c: 0, q: "Mount Ararat lies within which country's borders?", a: ["Turkey", "Armenia", "Iran", "Georgia"] },
+  { c: 0, q: "The Gulf of Bothnia lies between Sweden and which country?", a: ["Finland", "Estonia", "Norway", "Denmark"] },
+  { c: 0, q: "What is the capital of Canada's Yukon territory?", a: ["Whitehorse", "Yellowknife", "Iqaluit", "Dawson City"] },
+  { c: 0, q: "The Zambezi River empties into which ocean?", a: ["The Indian Ocean", "The Atlantic Ocean", "The Southern Ocean", "The Pacific Ocean"] },
+  { c: 0, q: "Which US state is divided into the most counties?", a: ["Texas", "Georgia", "Kentucky", "Virginia"] },
+  { c: 0, q: "The rock-cut city of Petra is in which country?", a: ["Jordan", "Israel", "Syria", "Saudi Arabia"] },
+  { c: 0, q: "The Bosphorus connects the Sea of Marmara to which sea?", a: ["The Black Sea", "The Aegean Sea", "The Caspian Sea", "The Adriatic Sea"] },
+  { c: 0, q: "Which country's territory includes the geographic North Pole?", a: ["None - it lies in international waters", "Russia", "Canada", "Denmark"] },
+  { c: 0, q: "Which country became the world's newest UN member state in 2011?", a: ["South Sudan", "Kosovo", "East Timor", "Montenegro"] },
+  { c: 0, q: "What is the capital of Myanmar?", a: ["Naypyidaw", "Yangon", "Mandalay", "Bago"] },
+  { c: 0, q: "What is the highest mountain in the contiguous United States?", a: ["Mount Whitney", "Mount Rainier", "Mount Elbert", "Pikes Peak"] },
+  { c: 0, q: "Which is the largest lake lying entirely within Canada?", a: ["Great Bear Lake", "Lake Winnipeg", "Great Slave Lake", "Lake Athabasca"] },
+  { c: 0, q: "The Strait of Malacca separates the Malay Peninsula from which island?", a: ["Sumatra", "Java", "Borneo", "Sulawesi"] },
 
   // ----------------------------------------------------------- Entertainment
   { c: 1, q: "Who directed and starred in Citizen Kane?", a: ["Orson Welles", "John Huston", "Frank Capra", "Howard Hawks"] },
@@ -359,6 +539,31 @@ const HARD = [
   { c: 1, q: "Kathryn Bigelow won Best Director for which film?", a: ["The Hurt Locker", "Zero Dark Thirty", "Point Break", "Detroit"] },
   { c: 1, q: "Which director's films include Stalker and Solaris?", a: ["Andrei Tarkovsky", "Sergei Eisenstein", "Krzysztof Kieślowski", "Béla Tarr"] },
   { c: 1, q: "Which singer released the album Blue in 1971?", a: ["Joni Mitchell", "Carole King", "Carly Simon", "Janis Joplin"] },
+  { c: 1, q: "Which film won the Palme d'Or at Cannes in 1994?", a: ["Pulp Fiction", "Three Colours: Red", "The Piano", "Underground"] },
+  { c: 1, q: "Who composed the shrieking string score for Psycho?", a: ["Bernard Herrmann", "Elmer Bernstein", "Jerry Goldsmith", "Max Steiner"] },
+  { c: 1, q: "Who played Hannibal Lecter in the 1986 film Manhunter?", a: ["Brian Cox", "Anthony Hopkins", "Mads Mikkelsen", "Gary Oldman"] },
+  { c: 1, q: "Which band recorded the album Pet Sounds?", a: ["The Beach Boys", "The Byrds", "The Mamas & the Papas", "The Turtles"] },
+  { c: 1, q: "Who directed the 1948 film Bicycle Thieves?", a: ["Vittorio De Sica", "Roberto Rossellini", "Luchino Visconti", "Michelangelo Antonioni"] },
+  { c: 1, q: "What was Disney's first feature-length animated film?", a: ["Snow White and the Seven Dwarfs", "Pinocchio", "Fantasia", "Bambi"] },
+  { c: 1, q: "Who founded Motown Records?", a: ["Berry Gordy", "Quincy Jones", "Ahmet Ertegun", "Sam Phillips"] },
+  { c: 1, q: "Nurse Ratched is the antagonist of which film?", a: ["One Flew Over the Cuckoo's Nest", "The Snake Pit", "Shutter Island", "Misery"] },
+  { c: 1, q: "Which director has won the most Academy Awards for Best Director?", a: ["John Ford", "William Wyler", "Frank Capra", "Steven Spielberg"] },
+  { c: 1, q: "Who directed Mulholland Drive?", a: ["David Lynch", "David Fincher", "Darren Aronofsky", "Paul Thomas Anderson"] },
+  { c: 1, q: "Which artist designed the banana cover of The Velvet Underground & Nico?", a: ["Andy Warhol", "Roy Lichtenstein", "Peter Blake", "Robert Rauschenberg"] },
+  { c: 1, q: "Which sitcom is set in a Boston bar \"where everybody knows your name\"?", a: ["Cheers", "Frasier", "Taxi", "Barney Miller"] },
+  { c: 1, q: "Which songwriting duo wrote the musical Cabaret?", a: ["Kander and Ebb", "Rodgers and Hammerstein", "Lerner and Loewe", "Comden and Green"] },
+  { c: 1, q: "Which film opens with the line \"I believe in America\"?", a: ["The Godfather", "Goodfellas", "Once Upon a Time in America", "Scarface"] },
+  { c: 1, q: "Which musician recorded the 1968 album Astral Weeks?", a: ["Van Morrison", "Nick Drake", "Tim Buckley", "Leonard Cohen"] },
+  { c: 1, q: "Which performer has won the most Academy Awards for acting?", a: ["Katharine Hepburn", "Meryl Streep", "Ingrid Bergman", "Jack Nicholson"] },
+  { c: 1, q: "The dysfunctional Bluth family appears in which series?", a: ["Arrested Development", "Schitt's Creek", "Modern Family", "Succession"] },
+  { c: 1, q: "Who directed the 2018 film Roma?", a: ["Alfonso Cuarón", "Alejandro González Iñárritu", "Guillermo del Toro", "Pedro Almodóvar"] },
+  { c: 1, q: "Which band released the 1969 rock opera Tommy?", a: ["The Who", "The Kinks", "Cream", "Deep Purple"] },
+  { c: 1, q: "Who played Blanche DuBois opposite Marlon Brando in the 1951 film?", a: ["Vivien Leigh", "Bette Davis", "Katharine Hepburn", "Joan Crawford"] },
+  { c: 1, q: "What was the first music video ever played on MTV?", a: ["\"Video Killed the Radio Star\"", "\"Thriller\"", "\"Bette Davis Eyes\"", "\"Whip It\""] },
+  { c: 1, q: "Who created the animated series South Park?", a: ["Trey Parker and Matt Stone", "Seth MacFarlane", "Mike Judge", "Matt Groening"] },
+  { c: 1, q: "Who composed the electronic score for Blade Runner?", a: ["Vangelis", "Tangerine Dream", "Giorgio Moroder", "Brian Eno"] },
+  { c: 1, q: "Who co-directed the 2002 film City of God?", a: ["Fernando Meirelles", "Walter Salles", "Alejandro Amenábar", "Alfonso Cuarón"] },
+  { c: 1, q: "Which singer was born Farrokh Bulsara?", a: ["Freddie Mercury", "Elton John", "David Bowie", "Cat Stevens"] },
 
   // ----------------------------------------------------------------- History
   { c: 2, q: "Which treaty formally ended the First World War with Germany?", a: ["The Treaty of Versailles", "The Treaty of Trianon", "The Treaty of Brest-Litovsk", "The Treaty of Sèvres"] },
@@ -401,6 +606,31 @@ const HARD = [
   { c: 2, q: "Which 1215 rebellion-era document limited the English crown's power?", a: ["Magna Carta", "The Bill of Rights", "The Petition of Right", "The Act of Settlement"] },
   { c: 2, q: "Which ancient wonder stood on the island of Pharos?", a: ["The Lighthouse of Alexandria", "The Colossus of Rhodes", "The Temple of Artemis", "The Mausoleum at Halicarnassus"] },
   { c: 2, q: "Which US general accepted Japan's formal surrender in 1945?", a: ["Douglas MacArthur", "Dwight Eisenhower", "George Patton", "Omar Bradley"] },
+  { c: 2, q: "Which 1494 treaty divided the New World between Spain and Portugal?", a: ["The Treaty of Tordesillas", "The Treaty of Utrecht", "The Treaty of Zaragoza", "The Treaty of Alcáçovas"] },
+  { c: 2, q: "Who was the first emperor of a unified China?", a: ["Qin Shi Huang", "Kublai Khan", "Wu Zetian", "Han Wudi"] },
+  { c: 2, q: "In which year was the Battle of Agincourt fought?", a: ["1415", "1346", "1453", "1485"] },
+  { c: 2, q: "Mansa Musa, said to be the richest man in history, ruled which empire?", a: ["The Mali Empire", "The Songhai Empire", "The Kingdom of Kush", "The Ashanti Empire"] },
+  { c: 2, q: "What was the Bolshevik secret police founded in 1917 called?", a: ["The Cheka", "The NKVD", "The KGB", "The Okhrana"] },
+  { c: 2, q: "Who was the last emperor of China?", a: ["Puyi", "Guangxu", "Tongzhi", "Xianfeng"] },
+  { c: 2, q: "Which country was the first to grant women the national vote, in 1893?", a: ["New Zealand", "Australia", "Finland", "Norway"] },
+  { c: 2, q: "In which year did the Thirty Years' War end?", a: ["1648", "1618", "1660", "1697"] },
+  { c: 2, q: "In which year was the Cuban Missile Crisis?", a: ["1962", "1959", "1965", "1968"] },
+  { c: 2, q: "Which Carthaginian general crossed the Alps with war elephants?", a: ["Hannibal", "Hamilcar Barca", "Hasdrubal", "Scipio"] },
+  { c: 2, q: "Which Persian dynasty did Alexander the Great overthrow?", a: ["The Achaemenids", "The Sassanids", "The Parthians", "The Safavids"] },
+  { c: 2, q: "What was the first permanent English settlement in America, founded in 1607?", a: ["Jamestown", "Plymouth", "Roanoke", "Boston"] },
+  { c: 2, q: "Who was the first Prime Minister of independent India?", a: ["Jawaharlal Nehru", "Sardar Patel", "Rajendra Prasad", "Lal Bahadur Shastri"] },
+  { c: 2, q: "Which war did the 1905 Treaty of Portsmouth end?", a: ["The Russo-Japanese War", "The Crimean War", "The First Sino-Japanese War", "The Boer War"] },
+  { c: 2, q: "Which queen was executed at Fotheringhay Castle in 1587?", a: ["Mary, Queen of Scots", "Anne Boleyn", "Lady Jane Grey", "Catherine Howard"] },
+  { c: 2, q: "Who founded the dynasty that ruled the Ottoman Empire?", a: ["Osman I", "Mehmed II", "Selim I", "Orhan"] },
+  { c: 2, q: "On which ship did Charles Darwin make his famous voyage?", a: ["HMS Beagle", "HMS Endeavour", "HMS Challenger", "HMS Victory"] },
+  { c: 2, q: "The Boxer Rebellion took place in which country?", a: ["China", "Japan", "Korea", "Vietnam"] },
+  { c: 2, q: "Which February 1945 conference brought together Churchill, Roosevelt and Stalin?", a: ["Yalta", "Potsdam", "Tehran", "Casablanca"] },
+  { c: 2, q: "Who led the revolution that took power in Cuba in 1959?", a: ["Fidel Castro", "Che Guevara", "Camilo Cienfuegos", "Raúl Castro"] },
+  { c: 2, q: "Which Roman emperor issued the Edict of Milan tolerating Christianity?", a: ["Constantine", "Diocletian", "Theodosius", "Trajan"] },
+  { c: 2, q: "What was the American programme to rebuild post-war Western Europe called?", a: ["The Marshall Plan", "The Truman Doctrine", "Lend-Lease", "The Dawes Plan"] },
+  { c: 2, q: "Which Byzantine emperor codified Roman law in the 6th century?", a: ["Justinian I", "Basil II", "Heraclius", "Constantine XI"] },
+  { c: 2, q: "In which year did Saigon fall, ending the Vietnam War?", a: ["1975", "1973", "1968", "1979"] },
+  { c: 2, q: "Which wall did the Romans build north of Hadrian's Wall?", a: ["The Antonine Wall", "The Gask Ridge", "Offa's Dyke", "The Devil's Dyke"] },
 
   // ------------------------------------------------------- Arts & Literature
   { c: 3, q: "Who wrote Ulysses?", a: ["James Joyce", "Samuel Beckett", "Virginia Woolf", "Ezra Pound"] },
@@ -443,6 +673,31 @@ const HARD = [
   { c: 3, q: "Which architect founded the Bauhaus school?", a: ["Walter Gropius", "Mies van der Rohe", "Le Corbusier", "Marcel Breuer"] },
   { c: 3, q: "Who wrote the 1977 novel Song of Solomon?", a: ["Toni Morrison", "Maya Angelou", "Gloria Naylor", "Paule Marshall"] },
   { c: 3, q: "Who wrote the Duino Elegies?", a: ["Rainer Maria Rilke", "Paul Celan", "Stefan George", "Hugo von Hofmannsthal"] },
+  { c: 3, q: "Who wrote the play The Cherry Orchard?", a: ["Anton Chekhov", "Maxim Gorky", "Nikolai Gogol", "Ivan Turgenev"] },
+  { c: 3, q: "Which sculptor is known for spindly, elongated walking figures?", a: ["Alberto Giacometti", "Constantin Brâncuși", "Henry Moore", "Umberto Boccioni"] },
+  { c: 3, q: "Who wrote the novel Blood Meridian?", a: ["Cormac McCarthy", "Don DeLillo", "Philip Roth", "Thomas Pynchon"] },
+  { c: 3, q: "Who composed the Enigma Variations?", a: ["Edward Elgar", "Gustav Holst", "Ralph Vaughan Williams", "Benjamin Britten"] },
+  { c: 3, q: "Who painted the Isenheim Altarpiece?", a: ["Matthias Grünewald", "Albrecht Dürer", "Lucas Cranach", "Hans Holbein"] },
+  { c: 3, q: "Who wrote the epic poem Paradise Lost?", a: ["John Milton", "Edmund Spenser", "John Donne", "Andrew Marvell"] },
+  { c: 3, q: "Which Japanese novelist wrote The Wind-Up Bird Chronicle?", a: ["Haruki Murakami", "Yukio Mishima", "Kenzaburō Ōe", "Yasunari Kawabata"] },
+  { c: 3, q: "Who painted Nighthawks, showing a late-night diner?", a: ["Edward Hopper", "Thomas Hart Benton", "Georgia O'Keeffe", "Charles Sheeler"] },
+  { c: 3, q: "Which Chilean poet won the 1971 Nobel Prize in Literature?", a: ["Pablo Neruda", "Gabriela Mistral", "Octavio Paz", "César Vallejo"] },
+  { c: 3, q: "Who composed the opera Carmen?", a: ["Georges Bizet", "Giuseppe Verdi", "Giacomo Puccini", "Jules Massenet"] },
+  { c: 3, q: "Who wrote the play Death of a Salesman?", a: ["Arthur Miller", "Tennessee Williams", "Clifford Odets", "David Mamet"] },
+  { c: 3, q: "Which architect designed Fallingwater?", a: ["Frank Lloyd Wright", "Louis Sullivan", "Mies van der Rohe", "Philip Johnson"] },
+  { c: 3, q: "Who wrote If on a winter's night a traveler?", a: ["Italo Calvino", "Umberto Eco", "Primo Levi", "Alberto Moravia"] },
+  { c: 3, q: "Who composed the tone poem Also sprach Zarathustra?", a: ["Richard Strauss", "Gustav Mahler", "Anton Bruckner", "Richard Wagner"] },
+  { c: 3, q: "Who wrote the 1958 novel The Leopard?", a: ["Giuseppe Tomasi di Lampedusa", "Italo Svevo", "Cesare Pavese", "Elsa Morante"] },
+  { c: 3, q: "Which artist was known for wrapping buildings and landmarks in fabric?", a: ["Christo", "Richard Serra", "Anish Kapoor", "Damien Hirst"] },
+  { c: 3, q: "Whose quatrains did Edward FitzGerald famously translate into English?", a: ["Omar Khayyám", "Rumi", "Hafez", "Ferdowsi"] },
+  { c: 3, q: "Which Dutch painter reduced his work to grids of primary colours?", a: ["Piet Mondrian", "Theo van Doesburg", "Kazimir Malevich", "Wassily Kandinsky"] },
+  { c: 3, q: "Who wrote the 1947 novel Under the Volcano?", a: ["Malcolm Lowry", "Graham Greene", "Evelyn Waugh", "Lawrence Durrell"] },
+  { c: 3, q: "Which Nigerian writer won the 1986 Nobel Prize in Literature?", a: ["Wole Soyinka", "Chinua Achebe", "Ben Okri", "Nadine Gordimer"] },
+  { c: 3, q: "Who composed the opera cycle The Ring of the Nibelung?", a: ["Richard Wagner", "Richard Strauss", "Carl Maria von Weber", "Engelbert Humperdinck"] },
+  { c: 3, q: "Who wrote the novel The Tin Drum?", a: ["Günter Grass", "Heinrich Böll", "Thomas Mann", "Hermann Hesse"] },
+  { c: 3, q: "Which English painter's works include The Hay Wain?", a: ["John Constable", "J. M. W. Turner", "Thomas Gainsborough", "George Stubbs"] },
+  { c: 3, q: "Who wrote the Beat poem \"Howl\"?", a: ["Allen Ginsberg", "Jack Kerouac", "Lawrence Ferlinghetti", "Gregory Corso"] },
+  { c: 3, q: "Who wrote the 1962 novel A Clockwork Orange?", a: ["Anthony Burgess", "William Golding", "J. G. Ballard", "Kingsley Amis"] },
 
   // ------------------------------------------------------- Science & Nature
   { c: 4, q: "What is the most abundant element in the Earth's crust?", a: ["Oxygen", "Silicon", "Iron", "Aluminium"] },
@@ -485,6 +740,31 @@ const HARD = [
   { c: 4, q: "Which scientist first measured the speed of light with reasonable accuracy in the 1670s?", a: ["Ole Rømer", "Isaac Newton", "Christiaan Huygens", "Galileo Galilei"] },
   { c: 4, q: "How many pairs of chromosomes does a typical human cell contain?", a: ["23", "46", "22", "48"] },
   { c: 4, q: "Which blood component is responsible for clotting?", a: ["Platelets", "Red blood cells", "Plasma", "Lymphocytes"] },
+  { c: 4, q: "What is the SI unit of pressure?", a: ["The pascal", "The joule", "The tesla", "The henry"] },
+  { c: 4, q: "Which element has the highest melting point?", a: ["Tungsten", "Platinum", "Osmium", "Iridium"] },
+  { c: 4, q: "What is the loss of water vapour through a plant's leaves called?", a: ["Transpiration", "Respiration", "Osmosis", "Guttation"] },
+  { c: 4, q: "Who discovered the neutron?", a: ["James Chadwick", "Ernest Rutherford", "Niels Bohr", "J. J. Thomson"] },
+  { c: 4, q: "Which particle was confirmed at CERN in 2012?", a: ["The Higgs boson", "The top quark", "The tau neutrino", "The W boson"] },
+  { c: 4, q: "What is the hardest substance in the human body?", a: ["Tooth enamel", "Bone", "Cartilage", "Dentine"] },
+  { c: 4, q: "Which planet takes about 165 Earth years to orbit the Sun?", a: ["Neptune", "Uranus", "Saturn", "Pluto"] },
+  { c: 4, q: "What is the scientific study of earthquakes called?", a: ["Seismology", "Volcanology", "Geodesy", "Tectonics"] },
+  { c: 4, q: "Which blood type is known as the universal recipient?", a: ["AB positive", "O negative", "A positive", "B negative"] },
+  { c: 4, q: "What is the chemical symbol for potassium?", a: ["K", "P", "Po", "Pt"] },
+  { c: 4, q: "Which enzyme in saliva starts breaking down starch?", a: ["Amylase", "Pepsin", "Lipase", "Trypsin"] },
+  { c: 4, q: "What is the largest living species of shark?", a: ["The whale shark", "The great white shark", "The basking shark", "The tiger shark"] },
+  { c: 4, q: "Which physicist proposed that black holes slowly emit radiation?", a: ["Stephen Hawking", "Roger Penrose", "Kip Thorne", "John Wheeler"] },
+  { c: 4, q: "Roughly what is the pH of human stomach acid?", a: ["About 2", "About 5", "About 7", "About 9"] },
+  { c: 4, q: "Which organ stores the bile produced by the liver?", a: ["The gall bladder", "The spleen", "The pancreas", "The duodenum"] },
+  { c: 4, q: "What is the boundary around a black hole beyond which nothing escapes?", a: ["The event horizon", "The singularity", "The accretion disc", "The photon sphere"] },
+  { c: 4, q: "Which vitamin is essential for blood clotting?", a: ["Vitamin K", "Vitamin C", "Vitamin B6", "Vitamin E"] },
+  { c: 4, q: "Which bird reaches the highest speed of any animal, in a dive?", a: ["The peregrine falcon", "The golden eagle", "The swift", "The frigatebird"] },
+  { c: 4, q: "Which type of rock forms from cooled magma or lava?", a: ["Igneous", "Sedimentary", "Metamorphic", "Clastic"] },
+  { c: 4, q: "What is the SI unit of power?", a: ["The watt", "The joule", "The newton", "The volt"] },
+  { c: 4, q: "Which is the longest bone in the human body?", a: ["The femur", "The tibia", "The humerus", "The fibula"] },
+  { c: 4, q: "What is a substance that speeds up a reaction without being consumed?", a: ["A catalyst", "A reagent", "A solvent", "A substrate"] },
+  { c: 4, q: "Which particle has an electron's mass but the opposite charge?", a: ["The positron", "The proton", "The muon", "The pion"] },
+  { c: 4, q: "How many valence electrons does a carbon atom have?", a: ["Four", "Two", "Six", "Eight"] },
+  { c: 4, q: "Which mammal lays eggs?", a: ["The platypus", "The sloth", "The armadillo", "The pangolin"] },
 
   // -------------------------------------------------------- Sports & Leisure
   { c: 5, q: "Which country won the first FIFA World Cup in 1930?", a: ["Uruguay", "Brazil", "Argentina", "Italy"] },
@@ -527,13 +807,73 @@ const HARD = [
   { c: 5, q: "Which country invented the sport of badminton's forerunner, 'poona'?", a: ["India", "China", "England", "Japan"] },
   { c: 5, q: "How many points does a team need to win a standard volleyball set?", a: ["25", "21", "15", "30"] },
   { c: 5, q: "Which boxer was nicknamed 'Iron Mike'?", a: ["Mike Tyson", "Michael Spinks", "Riddick Bowe", "Evander Holyfield"] },
+  { c: 5, q: "Which team won the first Cricket World Cup in 1975?", a: ["The West Indies", "Australia", "England", "India"] },
+  { c: 5, q: "Who was the first gymnast to score a perfect 10 at the Olympics?", a: ["Nadia Comăneci", "Olga Korbut", "Mary Lou Retton", "Ludmilla Tourischeva"] },
+  { c: 5, q: "In which year was the first sub-four-minute mile run?", a: ["1954", "1948", "1961", "1967"] },
+  { c: 5, q: "Who won the first Formula 1 World Championship in 1950?", a: ["Giuseppe Farina", "Juan Manuel Fangio", "Alberto Ascari", "Stirling Moss"] },
+  { c: 5, q: "How many players per side take the field in men's field lacrosse?", a: ["Ten", "Twelve", "Eight", "Fifteen"] },
+  { c: 5, q: "Which country won the first Rugby World Cup in 1987?", a: ["New Zealand", "Australia", "France", "South Africa"] },
+  { c: 5, q: "The Thomas Cup is contested in which sport?", a: ["Badminton", "Table tennis", "Squash", "Volleyball"] },
+  { c: 5, q: "Which boxer was known as 'The Manassa Mauler'?", a: ["Jack Dempsey", "Rocky Marciano", "Joe Louis", "Gene Tunney"] },
+  { c: 5, q: "The 'Fosbury flop' is a technique in which event?", a: ["The high jump", "The pole vault", "The long jump", "The triple jump"] },
+  { c: 5, q: "Which NFL team plays its home games at Lambeau Field?", a: ["The Green Bay Packers", "The Chicago Bears", "The Minnesota Vikings", "The Detroit Lions"] },
+  { c: 5, q: "In darts, what is the highest possible checkout from a single visit?", a: ["170", "180", "160", "150"] },
+  { c: 5, q: "Who held the world chess championship from 1985 to 2000?", a: ["Garry Kasparov", "Anatoly Karpov", "Vladimir Kramnik", "Bobby Fischer"] },
+  { c: 5, q: "Which country has won the most Olympic golds in field hockey?", a: ["India", "The Netherlands", "Australia", "Pakistan"] },
+  { c: 5, q: "How many players from each team are on the mat in kabaddi?", a: ["Seven", "Five", "Nine", "Eleven"] },
+  { c: 5, q: "Which Italian circuit is known as the Temple of Speed?", a: ["Monza", "Imola", "Mugello", "Misano"] },
+  { c: 5, q: "In bowling, what is the term for three consecutive strikes?", a: ["A turkey", "A hambone", "A split", "A brooklyn"] },
+  { c: 5, q: "Which country won the first Women's FIFA World Cup in 1991?", a: ["The United States", "Norway", "Germany", "Sweden"] },
+  { c: 5, q: "Which cricketer holds the highest Test batting average of all time?", a: ["Don Bradman", "Sachin Tendulkar", "Jack Hobbs", "Viv Richards"] },
+  { c: 5, q: "Which horse won the English Triple Crown in 1970?", a: ["Nijinsky", "Mill Reef", "Red Rum", "Shergar"] },
+  { c: 5, q: "What is the highest rank in professional sumo?", a: ["Yokozuna", "Ozeki", "Sekiwake", "Komusubi"] },
+  { c: 5, q: "Riders from which country have won the most Tours de France?", a: ["France", "Belgium", "Spain", "Italy"] },
+  { c: 5, q: "How long is a cricket pitch between the wickets?", a: ["22 yards", "20 yards", "25 yards", "18 yards"] },
+  { c: 5, q: "Which man has won the most Grand Slam singles titles in tennis?", a: ["Novak Djokovic", "Rafael Nadal", "Roger Federer", "Pete Sampras"] },
+  { c: 5, q: "The Iditarod is a race in which sport?", a: ["Sled dog racing", "Cross-country skiing", "Snowmobiling", "Speed skating"] },
+  { c: 5, q: "In which martial art does a throw scoring 'ippon' win the bout outright?", a: ["Judo", "Taekwondo", "Aikido", "Muay Thai"] },
 ];
 
-// The difficulty tag is applied here so entries above stay easy to read and edit.
-module.exports = [
-  ...EASY.map((q) => ({ ...q, d: 1 })),
-  ...HARD.map((q) => ({ ...q, d: 2 })),
+/**
+ * Stable id for a question, hashed from its text (FNV-1a, base36).
+ *
+ * Player ratings are keyed on this, so ids must NOT be positional - inserting a
+ * question at the top of an array would otherwise re-point every vote below it
+ * at the wrong question. Rewording a question deliberately mints a new id and
+ * resets its rating, which is the right call: it is a different question now.
+ */
+function questionId(text) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36).padStart(7, '0');
+}
+
+// The difficulty tag and id are applied here so entries above stay easy to read
+// and edit - everything in the arrays is just { c, q, a }.
+const ALL = [
+  ...EASY.map((q) => ({ ...q, d: 1, id: questionId(q.q) })),
+  ...HARD.map((q) => ({ ...q, d: 2, id: questionId(q.q) })),
 ];
 
+// Duplicate wording and (vanishingly unlikely) hash collisions both land here.
+// Either way two questions would share a rating, so fail loudly at boot rather
+// than quietly mis-attributing votes.
+const seen = new Map();
+for (const q of ALL) {
+  const clash = seen.get(q.id);
+  if (clash) {
+    throw new Error(
+      `questions.js: id collision "${q.id}" between\n  ${clash.q}\n  ${q.q}\n` +
+      'If these are the same question, delete one; if not, reword one slightly.'
+    );
+  }
+  seen.set(q.id, q);
+}
+
+module.exports = ALL;
 module.exports.EASY = EASY;
 module.exports.HARD = HARD;
+module.exports.questionId = questionId;

@@ -295,6 +295,48 @@ select { cursor: pointer; }
 .q-status.good { color: #86efac; }
 .q-status.bad { color: #fca5a5; }
 
+.q-foot { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.q-foot .q-status { flex: 1; min-width: 180px; }
+
+/* ------------------------------------------------------------ question votes */
+.vote { display: flex; align-items: center; gap: 6px; flex: none; margin-top: 16px; }
+.vote[hidden] { display: none; }
+.vote.compact { margin-top: 0; gap: 4px; }
+.vote-label { color: var(--muted); font-size: 12px; margin-right: 2px; }
+.vote-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #10162a;
+  color: var(--muted);
+  font: inherit; font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.vote-btn:hover { background: #1a2340; border-color: #46538a; color: var(--text); }
+.vote-btn.on { color: var(--text); border-color: var(--good); background: rgba(34,197,94,.16); }
+.vote-btn.down.on { border-color: var(--bad); background: rgba(239,68,68,.16); }
+.vote-btn .vote-icon { font-size: 13px; line-height: 1; filter: grayscale(1); opacity: .8; }
+.vote-btn.on .vote-icon, .vote-btn:hover .vote-icon { filter: none; opacity: 1; }
+.vote.compact .vote-btn { padding: 3px 8px; font-size: 11px; }
+
+.rate-pane { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.rate-list { gap: 9px; }
+.rate-row {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+.rate-row.retired { opacity: .55; }
+.rate-text { color: var(--text); font-size: 12.5px; line-height: 1.35; }
+.rate-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rate-cat { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.rate-row.retired .rate-cat { color: var(--bad); }
+
 .cat-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
 @media (max-width: 620px) { .cat-choices { grid-template-columns: 1fr 1fr; } }
 .cat-btn {

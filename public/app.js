@@ -283,6 +283,7 @@
     renderLobbyPanel(s);
     renderPlayers(s);
     renderLog(s);
+    renderRatings(s);
     renderControls(s);
     renderQuestion(s);
     renderCategoryChoice(s);
@@ -497,6 +498,92 @@
     return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  // --------------------------------------------------------- question votes
+  // Thumbs are global and permanent: enough downvotes and the server stops
+  // dealing that question to anyone. Clicking the same thumb twice undoes it.
+  function sendVote(questionId, vote) {
+    if (questionId) send({ t: 'voteQuestion', questionId, vote });
+  }
+
+  function voteButtons(rating, compact) {
+    const row = document.createElement('div');
+    row.className = 'vote' + (compact ? ' compact' : '');
+    [1, -1].forEach((v) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'vote-btn' + (v < 0 ? ' down' : '') + (rating.mine === v ? ' on' : '');
+      btn.title = v > 0 ? 'Keep this question' : 'Retire this question';
+      const icon = document.createElement('span');
+      icon.className = 'vote-icon';
+      icon.textContent = v > 0 ? '\u{1F44D}' : '\u{1F44E}';
+      const count = document.createElement('span');
+      count.className = 'vote-count';
+      count.textContent = v > 0 ? rating.up : rating.down;
+      btn.appendChild(icon);
+      btn.appendChild(count);
+      btn.addEventListener('click', () => sendVote(rating.id, v));
+      row.appendChild(btn);
+    });
+    return row;
+  }
+
+  // The card is only up for a few seconds after the reveal, so this pane keeps
+  // the last dozen questions around to be judged at leisure.
+  function renderRatings(s) {
+    const list = $('#rate-list');
+    const rows = s.ratings || [];
+    list.innerHTML = '';
+
+    if (!rows.length) {
+      const li = document.createElement('li');
+      li.textContent = 'Nothing asked yet — rate questions as they come up.';
+      list.appendChild(li);
+      return;
+    }
+
+    rows.forEach((r) => {
+      const cat = cats()[r.category];
+      const li = document.createElement('li');
+      li.className = 'rate-row' + (r.retired ? ' retired' : '');
+
+      const txt = document.createElement('span');
+      txt.className = 'rate-text';
+      txt.textContent = r.text;
+      li.appendChild(txt);
+
+      const meta = document.createElement('div');
+      meta.className = 'rate-meta';
+      const tag = document.createElement('span');
+      tag.className = 'rate-cat';
+      tag.textContent = r.retired ? 'retired' : (cat ? cat.name : '');
+      if (cat && !r.retired) tag.style.color = cat.color;
+      meta.appendChild(tag);
+      meta.appendChild(voteButtons(r, true));
+      li.appendChild(meta);
+
+      list.appendChild(li);
+    });
+  }
+
+  $$('#q-vote .vote-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const q = app.state && app.state.question;
+      if (q) sendVote(q.id, Number(btn.dataset.vote));
+    });
+  });
+
+  function renderCardVote(q) {
+    const box = $('#q-vote');
+    const rating = q && q.rating;
+    box.hidden = !rating;
+    if (!rating) return;
+    $$('#q-vote .vote-btn').forEach((btn) => {
+      const v = Number(btn.dataset.vote);
+      btn.classList.toggle('on', rating.mine === v);
+      btn.querySelector('.vote-count').textContent = v > 0 ? rating.up : rating.down;
+    });
+  }
+
   // ------------------------------------------------------------- questions
   let timerRaf = null;
 
@@ -553,6 +640,8 @@
       });
       box.appendChild(btn);
     });
+
+    renderCardVote(q);
 
     const status = $('#q-status');
     status.className = 'q-status';

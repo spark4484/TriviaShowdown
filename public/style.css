@@ -291,6 +291,68 @@ select { cursor: pointer; }
 .choice.wrong .key { color: var(--bad); border-color: var(--bad); }
 .choice.dim { opacity: .45; }
 
+/* ---------------------------------------------------------------- lifelines */
+.lifelines { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -6px 0 18px; }
+.ll-label { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-right: 2px; }
+.ll-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #10162a;
+  color: var(--text);
+  font: inherit; font-size: 12.5px; font-weight: 550;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, opacity .15s;
+}
+.ll-btn:hover:not(:disabled) { background: #1a2340; border-color: var(--cat, var(--accent)); }
+.ll-btn:disabled { cursor: not-allowed; opacity: .4; }
+.ll-btn.spent { text-decoration: line-through; text-decoration-color: var(--bad); }
+.ll-icon {
+  display: inline-grid; place-items: center;
+  min-width: 34px; height: 21px; padding: 0 6px;
+  border-radius: 999px;
+  background: var(--cat, var(--accent)); color: #0b0e18;
+  font-size: 11px; font-weight: 800; letter-spacing: .02em;
+}
+.ll-btn.spent .ll-icon { background: var(--line); color: var(--muted); }
+
+.choice.eliminated { opacity: .3; background: #0c1120; border-style: dashed; }
+.choice.eliminated .key { text-decoration: line-through; }
+.choice-bot { margin-left: auto; font-size: 15px; line-height: 1; flex: none; }
+
+/* The model's reply, shown to the whole room. It is a very small model, so
+   this is at least as often comedy as it is help. */
+.llm-box {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+}
+.llm-head { display: flex; align-items: baseline; gap: 7px; font-size: 12.5px; }
+.llm-avatar { font-size: 14px; line-height: 1; }
+.llm-head b { color: var(--text); font-weight: 650; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+.llm-status { color: var(--muted); font-size: 12px; }
+.llm-text { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; color: #cfd8f0; }
+.llm-text:empty { display: none; }
+.llm-box.thinking .llm-status { animation: blink 1.1s ease-in-out infinite; }
+.llm-box.failed { border-color: #5c2b33; }
+.llm-box.failed .llm-status { color: #fca5a5; }
+@keyframes blink { 50% { opacity: .35; } }
+
+.plife { display: flex; gap: 3px; flex: none; }
+.pip {
+  display: inline-grid; place-items: center;
+  min-width: 20px; height: 17px; padding: 0 4px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: #10162a;
+  font-size: 9.5px; font-weight: 800; color: var(--muted);
+  line-height: 1;
+}
+.pip.spent { opacity: .3; text-decoration: line-through; }
+
 .q-status { color: var(--muted); font-size: 14px; margin: 16px 0 0; min-height: 20px; }
 .q-status.good { color: #86efac; }
 .q-status.bad { color: #fca5a5; }

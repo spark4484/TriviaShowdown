@@ -3,6 +3,7 @@
 const { BOARD, CATEGORIES, TYPE, reachable } = require('./board');
 const QUESTIONS = require('./questions');
 const { votes } = require('./votes');
+const llm = require('./llm');
 
 const PLAYER_COLORS = ['#ff5252', '#40c4ff', '#69f0ae', '#ffd740', '#b388ff', '#ff8a65'];
 const MAX_PLAYERS = 6;
@@ -12,6 +13,11 @@ const MAX_LOG = 60;
 // How many of this room's questions stay open for rating. The card itself is
 // only up for a few seconds, so the Questions tab keeps recent ones thumbable.
 const MAX_RATEABLE = 12;
+
+// One of each per player per game, spent on the question you are looking at.
+function freshLifelines() {
+  return { fifty: true, llm: true };
+}
 
 // Which difficulty tags each setting draws from.
 const DIFFICULTY_POOLS = {
@@ -63,6 +69,8 @@ class Game {
     this.lastActionAt = Date.now();
 
     this.timer = null;
+    // Set while a lifeline has the answer clock stopped; see pauseAnswerTimer.
+    this.pausedMs = null;
     this.decks = CATEGORIES.map(() => []);
 
     // Questions this room has seen, newest first, and who voted what on each.
@@ -141,6 +149,7 @@ class Game {
       wedges: [false, false, false, false, false, false],
       correct: 0,
       asked: 0,
+      lifelines: freshLifelines(),
     };
     this.players.push(player);
     if (!this.hostId) this.hostId = id;
@@ -202,6 +211,7 @@ class Game {
       p.wedges = [false, false, false, false, false, false];
       p.correct = 0;
       p.asked = 0;
+      p.lifelines = freshLifelines();
     });
     this.turnIndex = 0;
     this.step = 'roll';
@@ -348,8 +358,13 @@ class Game {
       chosenIndex: null,
       revealed: false,
       timedOut: false,
+      // Lifeline residue, per question: which choices 50:50 removed, and what
+      // the small language model had to say if anyone phoned it.
+      eliminated: [],
+      llm: null,
     };
     this.openForRating(raw);
+    this.pausedMs = null; // any stopped clock belonged to the previous question
     player.asked++;
     this.step = 'answer';
     const label = isFinal ? 'the winning question' : isHq ? `a ${CATEGORIES[category].name} headquarters question` : `a ${CATEGORIES[category].name} question`;
@@ -368,6 +383,9 @@ class Game {
     const i = Number(index);
     if (!Number.isInteger(i) || i < 0 || i >= this.question.choices.length) {
       return { ok: false, error: 'Invalid answer.' };
+    }
+    if (this.question.eliminated.includes(i)) {
+      return { ok: false, error: 'Your 50:50 took that one off the board.' };
     }
     this.lastActionAt = this.now();
     this.resolveAnswer(i, false);
@@ -424,6 +442,7 @@ class Game {
     this.moveOptions = [];
     this.roll = null;
     this.step = 'roll';
+    this.pausedMs = null;
     if (this.players.length === 0) return;
     this.turnIndex = (this.turnIndex + 1) % this.players.length;
     this.lastActionAt = this.now();
@@ -446,6 +465,122 @@ class Game {
 
   wedgeCount(player) {
     return player.wedges.filter(Boolean).length;
+  }
+
+  // ----------------------------------------------------------------lifelines
+  /**
+   * Stop the answer clock. Used while a lifeline is resolving, because waiting
+   * on a language model should not cost you the turn. The remaining time is
+   * banked and handed back by resumeAnswerTimer.
+   */
+  pauseAnswerTimer() {
+    if (!this.timer || !this.deadline) return;
+    this.pausedMs = Math.max(1000, this.deadline - this.now());
+    this.clearTimer();
+    this.deadline = null;
+  }
+
+  resumeAnswerTimer() {
+    const ms = this.pausedMs;
+    this.pausedMs = null;
+    if (ms == null) return;
+    // The question may have been answered or abandoned while we waited. Never
+    // schedule over whatever timer the game has moved on to.
+    if (this.step !== 'answer' || !this.question || this.question.revealed) return;
+    this.schedule(ms, () => this.resolveAnswer(null, true));
+  }
+
+  useLifeline(byId, kind) {
+    if (this.phase !== 'playing') return { ok: false, error: 'The game is not running.' };
+    if (this.step !== 'answer' || !this.question) {
+      return { ok: false, error: 'There is no question to use a lifeline on.' };
+    }
+    const q = this.question;
+    if (q.forId !== byId) return { ok: false, error: 'Only the player answering can use a lifeline.' };
+    if (q.revealed) return { ok: false, error: 'Too late - the answer is already in.' };
+    const player = this.player(byId);
+    if (!player) return { ok: false, error: 'You are not in this room.' };
+
+    if (kind === 'fifty') return this.useFifty(player, q);
+    if (kind === 'llm') return this.useLlm(player, q);
+    return { ok: false, error: `Unknown lifeline "${kind}".` };
+  }
+
+  /** Drop two of the wrong answers, leaving the right one and a coin flip. */
+  useFifty(player, q) {
+    if (!player.lifelines.fifty) return { ok: false, error: 'You have already used 50:50 this game.' };
+    if (q.eliminated.length) return { ok: false, error: '50:50 has already been used on this question.' };
+
+    const wrong = q.choices.map((_, i) => i).filter((i) => i !== q.correctIndex);
+    player.lifelines.fifty = false;
+    q.eliminated = shuffle(wrong).slice(0, 2).sort((a, b) => a - b);
+    this.addLog(`${player.name} used 50:50 - two wrong answers are gone.`);
+    return { ok: true };
+  }
+
+  /**
+   * Phone a very small language model. The reply goes to the whole room, right
+   * or wrong, and the clock stops until it lands. If the model cannot be
+   * reached at all the lifeline is handed back - that is our fault, not yours.
+   */
+  useLlm(player, q) {
+    if (!player.lifelines.llm) {
+      return { ok: false, error: `You have already asked ${llm.displayModel()} this game.` };
+    }
+    // A failed attempt is refunded, so it must also be retryable here -
+    // otherwise the refund buys nothing until the next question.
+    if (q.llm && q.llm.status === 'thinking') {
+      return { ok: false, error: 'The model is still thinking about this one.' };
+    }
+    if (q.llm && q.llm.status === 'done') {
+      return { ok: false, error: 'The model has already had its say on this one.' };
+    }
+    if (!llm.ready()) {
+      return { ok: false, error: `${llm.displayModel()} is not answering. Is the model server running?` };
+    }
+
+    player.lifelines.llm = false;
+    q.llm = { status: 'thinking', model: llm.displayModel(), text: null, pick: null };
+    this.pauseAnswerTimer();
+    this.addLog(`${player.name} phones a friend: ${llm.displayModel()}.`);
+
+    llm.ask(q.text, q.choices).then(
+      (res) => this.deliverLlm(q, player, res, null),
+      (err) => this.deliverLlm(q, player, null, err)
+    );
+    return { ok: true };
+  }
+
+  /** Async landing pad for useLlm. Runs outside any request, so it broadcasts. */
+  deliverLlm(q, player, res, err) {
+    if (err) {
+      llm.markDown();
+      // Never reached it, so it never counted. Give the lifeline back even if
+      // the game has moved on - it belongs to the player, not the question.
+      player.lifelines.llm = true;
+    }
+    if (this.question !== q) {
+      // Question is history; nothing left to attach the answer to.
+      if (err) this.onChange();
+      return;
+    }
+
+    if (err) {
+      q.llm = {
+        status: 'error',
+        model: llm.displayModel(),
+        text: `Could not reach ${llm.displayModel()} (${err.message || err}). You keep the lifeline.`,
+        pick: null,
+      };
+      this.addLog(`${llm.displayModel()} did not pick up. ${player.name} keeps the lifeline.`);
+    } else {
+      q.llm = { status: 'done', model: res.model, text: res.text, pick: res.pick };
+      const picked = res.pick != null ? ` It likes ${'ABCD'[res.pick]}.` : ' It would not commit.';
+      this.addLog(`${res.model} has an opinion.${picked}`);
+    }
+
+    this.resumeAnswerTimer();
+    this.onChange();
   }
 
   // ------------------------------------------------------------- rating ops
@@ -547,7 +682,9 @@ class Game {
         wedges: p.wedges,
         correct: p.correct,
         asked: p.asked,
+        lifelines: { ...p.lifelines },
       })),
+      llm: { model: llm.displayModel(), available: llm.ready() },
       turn: cur
         ? {
             playerId: cur.id,
@@ -572,6 +709,8 @@ class Game {
             revealed: this.question.revealed,
             chosenIndex: this.question.chosenIndex,
             timedOut: this.question.timedOut,
+            eliminated: this.question.eliminated,
+            llm: this.question.llm,
             correctIndex: this.question.revealed ? this.question.correctIndex : null,
             wasCorrect: this.question.revealed ? this.question.wasCorrect : null,
           }

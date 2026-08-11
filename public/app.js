@@ -373,6 +373,23 @@
         li.appendChild(tag);
       }
 
+      // Who still has what to spend - worth knowing before you gloat.
+      if (s.phase === 'playing' && p.lifelines) {
+        const pips = document.createElement('div');
+        pips.className = 'plife';
+        [
+          { on: p.lifelines.fifty, text: '50', label: '50:50' },
+          { on: p.lifelines.llm, text: '\u{1F916}', label: (s.llm && s.llm.model) || 'the AI' },
+        ].forEach((pip) => {
+          const el = document.createElement('span');
+          el.className = 'pip' + (pip.on ? '' : ' spent');
+          el.textContent = pip.text;
+          el.title = `${pip.label} ${pip.on ? 'available' : 'used'}`;
+          pips.appendChild(el);
+        });
+        li.appendChild(pips);
+      }
+
       const score = document.createElement('div');
       score.className = 'pscore';
       const won = p.wedges.filter(Boolean).length;
@@ -584,6 +601,71 @@
     });
   }
 
+  // -------------------------------------------------------------- lifelines
+  // One 50:50 and one call to the model per player per game, spent on the
+  // question in front of you. The server owns both; these buttons only ask.
+  $$('#q-lifelines .ll-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      btn.disabled = true; // no double-spend while the round trip is in flight
+      send({ t: 'lifeline', kind: btn.dataset.kind });
+    });
+  });
+
+  function renderLifelines(s, q, forMe) {
+    const row = $('#q-lifelines');
+    const mine = me();
+    // Only the player on the hook sees them, and only while there is still a
+    // decision to make.
+    row.hidden = !forMe || q.revealed || !mine;
+    if (row.hidden) return;
+
+    const ll = mine.lifelines || {};
+    const llmInfo = s.llm || {};
+
+    const fifty = $('#ll-fifty');
+    const usedFifty = !ll.fifty;
+    fifty.disabled = usedFifty || (q.eliminated || []).length > 0;
+    fifty.classList.toggle('spent', usedFifty);
+    fifty.title = usedFifty ? 'Already used this game' : 'Remove two wrong answers';
+
+    const bot = $('#ll-llm');
+    const usedLlm = !ll.llm;
+    const offline = llmInfo.available === false;
+    // A failed call is refunded, so leave the button live to try again.
+    const spoken = !!q.llm && q.llm.status !== 'error';
+    bot.disabled = usedLlm || offline || spoken;
+    bot.classList.toggle('spent', usedLlm);
+    bot.querySelector('.ll-name').textContent = `Ask ${llmInfo.model || 'the AI'}`;
+    bot.title = usedLlm
+      ? 'Already used this game'
+      : offline
+        ? `${llmInfo.model || 'The model'} is not reachable right now`
+        : `Ask ${llmInfo.model || 'the AI'} - it is very small, so brace yourself`;
+  }
+
+  function renderLlmAnswer(q) {
+    const box = $('#q-llm');
+    const info = q.llm;
+    box.hidden = !info;
+    if (!info) return;
+
+    box.classList.toggle('thinking', info.status === 'thinking');
+    box.classList.toggle('failed', info.status === 'error');
+    $('#llm-name').textContent = info.model || 'the AI';
+
+    const status = $('#llm-status');
+    status.textContent = info.status === 'thinking'
+      ? 'is thinking… (clock paused)'
+      : info.status === 'error'
+        ? 'never picked up'
+        : info.pick != null
+          ? `says ${'ABCD'[info.pick]}`
+          : 'has thoughts, but no answer';
+
+    $('#llm-text').textContent = info.status === 'thinking' ? '' : (info.text || '');
+  }
+
   // ------------------------------------------------------------- questions
   let timerRaf = null;
 
@@ -611,18 +693,34 @@
     const forMe = q.forId === playerId;
     const asker = playerById(q.forId);
 
+    const eliminated = q.eliminated || [];
+    const llmPick = q.llm && q.llm.status === 'done' ? q.llm.pick : null;
+
     const box = $('#q-choices');
     box.innerHTML = '';
     q.choices.forEach((choice, i) => {
+      // Struck off by 50:50 - blanked while it matters, then restored at the
+      // reveal so the room can see the whole card and rate it fairly.
+      const gone = eliminated.includes(i) && !q.revealed;
       const btn = document.createElement('button');
-      btn.className = 'choice';
-      btn.disabled = !forMe || q.revealed || app.pendingAnswer != null;
+      btn.className = 'choice' + (gone ? ' eliminated' : '');
+      btn.disabled = gone || !forMe || q.revealed || app.pendingAnswer != null;
 
       const key = document.createElement('span');
       key.className = 'key';
       key.textContent = 'ABCD'[i];
       btn.appendChild(key);
-      btn.appendChild(document.createTextNode(choice));
+      btn.appendChild(document.createTextNode(gone ? '' : choice));
+
+      // Whose hunch this is stays visible next to the option, so nobody has to
+      // map "it said C" back onto the list themselves.
+      if (llmPick === i && !gone) {
+        const mark = document.createElement('span');
+        mark.className = 'choice-bot';
+        mark.textContent = '\u{1F916}';
+        mark.title = 'The AI went for this one';
+        btn.appendChild(mark);
+      }
 
       if (q.revealed) {
         if (i === q.correctIndex) btn.classList.add('correct');
@@ -633,7 +731,7 @@
       }
 
       btn.addEventListener('click', () => {
-        if (!forMe || q.revealed) return;
+        if (gone || !forMe || q.revealed) return;
         app.pendingAnswer = i;
         send({ t: 'answer', index: i });
         render();
@@ -641,6 +739,8 @@
       box.appendChild(btn);
     });
 
+    renderLifelines(s, q, forMe);
+    renderLlmAnswer(q);
     renderCardVote(q);
 
     const status = $('#q-status');

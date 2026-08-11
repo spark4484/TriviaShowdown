@@ -6,7 +6,8 @@ One Node process serves both the game and the web client, so a single
 
 - Six categories, six wedges, a wheel with six spokes and a hub
 - Real board movement: you pick which way to go, and you can cut through the hub
-- 780 multiple-choice questions across two difficulty tiers, plus an answer timer
+- 900 multiple-choice questions across two difficulty tiers, plus an answer timer
+- Two lifelines per player per game: 50:50, and phone-a-friend to a very small LLM
 - Thumbs up/down on every question — enough downvotes and it stops being dealt
 - Room codes, live game log, chat, and reconnect-without-losing-your-seat
 - No build step, no database, one dependency (`ws`)
@@ -48,6 +49,10 @@ open for the whole session.
 | `VOTES_FILE` | `data/votes.json` | Where question ratings are stored |
 | `QUESTION_RETIRE_DOWNS` | `3` | Downvotes before a question can be retired |
 | `QUESTION_RETIRE_RATIO` | `2` | How far downs must outweigh ups to retire |
+| `LLM_URL` | `http://127.0.0.1:11434` | Where the lifeline model is served |
+| `LLM_MODEL` | `qwen2.5:0.5b` | Model to ask |
+| `LLM_API` | auto | `ollama` or `openai`; guessed from the URL |
+| `LLM_TIMEOUT_MS` | `20000` | How long to wait before giving up on it |
 
 ## How to play
 
@@ -71,15 +76,46 @@ Special spaces:
   chooses the category for one final question. Get it right and you win; get it
   wrong and you have to leave and come back.
 
+### Lifelines
+
+Each player gets **one of each, once per game**, spendable only on their own
+question and only before they answer.
+
+- **50:50** — two of the wrong answers are struck off the card, leaving the
+  right one and a coin flip.
+- **Ask the AI** — the question is put to a very small language model running on
+  your own machine, and its reply goes up on the card for the whole room to see.
+  The answer clock stops while it thinks.
+
+The AI lifeline defaults to **qwen2.5:0.5b**, which is a half-billion-parameter
+model and therefore not very good at trivia. That is the point — treat it as a
+suggestion from an over-confident friend, not an oracle. It is often wrong,
+occasionally right for the wrong reason, and reliably funny.
+
+You need a model server running locally. Either works:
+
+```bash
+# Ollama (the default - nothing else to configure)
+ollama pull qwen2.5:0.5b
+ollama serve
+
+# ...or any OpenAI-compatible server, e.g. LM Studio or llama.cpp
+LLM_URL=http://127.0.0.1:1234/v1 LLM_MODEL=qwen2.5-0.5b-instruct npm start
+```
+
+If nothing is listening, the button greys out and everything else carries on as
+normal — the lifeline is optional, not a dependency. If the model is reachable
+but the call fails partway, the player gets the lifeline back.
+
 ### Difficulty
 
 The lobby has three settings, and **Hard** is the default:
 
 | Setting | Draws from | Feel |
 | --- | --- | --- |
-| Easy | 240 questions | General knowledge — most players get a good share |
-| Hard | 240 questions | Pub-quiz final round, with plausible distractors |
-| Mixed | all 480 | A bit of both |
+| Easy | 390 questions | General knowledge — most players get a good share |
+| Hard | 510 questions | Pub-quiz final round, with plausible distractors |
+| Mixed | all 900 | A bit of both |
 
 Difficulty has a real effect on pacing, because a wrong answer ends your turn.
 Median questions per two-player game, measured over simulated runs:
@@ -156,6 +192,7 @@ server/
   board.js      wheel geometry and the movement graph
   questions.js  the question bank
   votes.js      question ratings: tallies, persistence, retirement rule
+  llm.js        the "ask a small model" lifeline, and whether it is reachable
 scripts/
   ratings.js    "npm run ratings" - what players thought of each question
 public/

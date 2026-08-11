@@ -8,6 +8,7 @@ const { WebSocketServer } = require('ws');
 const { RoomManager } = require('./rooms');
 const { publicBoard } = require('./board');
 const { votes } = require('./votes');
+const llm = require('./llm');
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -151,6 +152,7 @@ const GAME_ACTIONS = {
   roll: (game, id) => game.roll_(id),
   move: (game, id, msg) => game.move(id, msg.node),
   answer: (game, id, msg) => game.answer(id, msg.index),
+  lifeline: (game, id, msg) => game.useLifeline(id, String(msg.kind || '')),
   chooseCategory: (game, id, msg) => game.chooseCategory(id, msg.category),
   skip: (game, id) => game.skip(id),
   kick: (game, id, msg) => game.kick(id, msg.playerId),
@@ -215,6 +217,8 @@ server.listen(PORT, HOST, () => {
   console.log('');
   console.log('  Trivia Showdown is running');
   console.log(`  Local:   http://localhost:${PORT}`);
+  console.log(`  Ask-the-AI lifeline: ${llm.MODEL} via ${llm.URL_BASE}`);
+  llm.ready(); // kick off the first availability probe so the button is right
   console.log('');
   console.log('  To play with friends over the internet, in another terminal run:');
   console.log(`    cloudflared tunnel --url http://localhost:${PORT}`);

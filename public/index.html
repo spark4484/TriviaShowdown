@@ -148,7 +148,30 @@
       </div>
       <div id="q-timer" class="q-timer"><i></i></div>
       <p id="q-text" class="q-text"></p>
+
+      <div id="q-lifelines" class="lifelines" hidden>
+        <span class="ll-label">Lifelines</span>
+        <button id="ll-fifty" class="ll-btn" type="button" data-kind="fifty">
+          <span class="ll-icon">50:50</span>
+          <span class="ll-name">Cut two answers</span>
+        </button>
+        <button id="ll-llm" class="ll-btn" type="button" data-kind="llm">
+          <span class="ll-icon">&#129302;</span>
+          <span class="ll-name">Ask the AI</span>
+        </button>
+      </div>
+
       <div id="q-choices" class="q-choices"></div>
+
+      <div id="q-llm" class="llm-box" hidden>
+        <div class="llm-head">
+          <span class="llm-avatar" aria-hidden="true">&#129302;</span>
+          <b id="llm-name">the AI</b>
+          <span id="llm-status" class="llm-status"></span>
+        </div>
+        <p id="llm-text" class="llm-text"></p>
+      </div>
+
       <div class="q-foot">
         <p id="q-status" class="q-status"></p>
         <div id="q-vote" class="vote" hidden>

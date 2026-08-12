@@ -217,8 +217,11 @@ server.listen(PORT, HOST, () => {
   console.log('');
   console.log('  Trivia Showdown is running');
   console.log(`  Local:   http://localhost:${PORT}`);
-  console.log(`  Ask-the-AI lifeline: ${llm.MODEL} via ${llm.URL_BASE}`);
-  llm.ready(); // kick off the first availability probe so the button is right
+  console.log(`  Ask-the-AI lifeline: ${llm.MODEL} via ${llm.URL_BASE} (preloading…)`);
+  // Load the weights now and keep them resident. A cold llama-server takes
+  // well over ten seconds to come up, and a player pressing the button should
+  // never be the one who discovers that.
+  llm.start();
   console.log('');
   console.log('  To play with friends over the internet, in another terminal run:');
   console.log(`    cloudflared tunnel --url http://localhost:${PORT}`);

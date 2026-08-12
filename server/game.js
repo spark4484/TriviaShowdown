@@ -684,7 +684,7 @@ class Game {
         asked: p.asked,
         lifelines: { ...p.lifelines },
       })),
-      llm: { model: llm.displayModel(), available: llm.ready() },
+      llm: { model: llm.displayModel(), available: llm.ready(), warm: llm.isWarm() },
       turn: cur
         ? {
             playerId: cur.id,

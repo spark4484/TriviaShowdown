@@ -52,7 +52,10 @@ open for the whole session.
 | `LLM_URL` | `http://127.0.0.1:11434` | Where the lifeline model is served |
 | `LLM_MODEL` | `qwen2.5:0.5b` | Model to ask |
 | `LLM_API` | auto | `ollama` or `openai`; guessed from the URL |
-| `LLM_TIMEOUT_MS` | `20000` | How long to wait before giving up on it |
+| `LLM_TIMEOUT_MS` | `45000` | How long to wait before giving up on an answer |
+| `LLM_LOAD_TIMEOUT_MS` | `120000` | How long to allow for the initial model load |
+| `LLM_KEEP_ALIVE` | `30m` | How long Ollama keeps the model in memory |
+| `LLM_KEEP_WARM_MS` | `600000` | How often to re-poke the model so it stays loaded |
 
 ## How to play
 
@@ -97,10 +100,23 @@ You need a model server running locally. Either works:
 ```bash
 # Ollama (the default - nothing else to configure)
 ollama pull qwen2.5:0.5b
-ollama serve
 
 # ...or any OpenAI-compatible server, e.g. LM Studio or llama.cpp
 LLM_URL=http://127.0.0.1:1234/v1 LLM_MODEL=qwen2.5-0.5b-instruct npm start
+```
+
+You usually do **not** need to run `ollama serve` yourself — installing Ollama
+registers it as a service that is already listening. If `ollama serve` prints
+`bind: address already in use`, that is Ollama telling you it is running fine
+already; ignore it. Confirm with `curl http://127.0.0.1:11434/api/tags`.
+
+The server preloads the model at startup and pokes it periodically to keep it
+resident, because a cold `llama-server` can spend fifteen seconds on CUDA setup
+before it reads a single token — long enough that the first player to press the
+button used to eat the whole timeout. Watch for this line at boot:
+
+```
+[llm] qwen2.5:0.5b loaded and warm (13.1s) - the lifeline will answer instantly
 ```
 
 If nothing is listening, the button greys out and everything else carries on as

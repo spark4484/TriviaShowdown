@@ -14,9 +14,27 @@ const MAX_LOG = 60;
 // only up for a few seconds, so the Questions tab keeps recent ones thumbable.
 const MAX_RATEABLE = 12;
 
-// One of each per player per game, spent on the question you are looking at.
+// One of each per player, spent on the question you are looking at - but they
+// come back. See recoverLifelines.
+const LIFELINE_KINDS = ['fifty', 'llm'];
+
+/**
+ * Correct answers a player must rack up before a spent lifeline returns.
+ *
+ * Counted since the moment it was spent, and they do not have to be
+ * consecutive: a wrong answer stalls the recovery, it does not reset it.
+ */
+const LIFELINE_RECOVERY = 10;
+
 function freshLifelines() {
   return { fifty: true, llm: true };
+}
+
+// player.correct as it stood when each lifeline was spent, or null while the
+// lifeline is in hand. The difference from the player's current total is how
+// far along the recovery is.
+function freshLifelineSpentAt() {
+  return { fifty: null, llm: null };
 }
 
 // Which difficulty tags each setting draws from.
@@ -150,6 +168,7 @@ class Game {
       correct: 0,
       asked: 0,
       lifelines: freshLifelines(),
+      lifelineSpentAt: freshLifelineSpentAt(),
     };
     this.players.push(player);
     if (!this.hostId) this.hostId = id;
@@ -212,6 +231,7 @@ class Game {
       p.correct = 0;
       p.asked = 0;
       p.lifelines = freshLifelines();
+      p.lifelineSpentAt = freshLifelineSpentAt();
     });
     this.turnIndex = 0;
     this.step = 'roll';
@@ -416,6 +436,7 @@ class Game {
         });
         return;
       }
+      this.recoverLifelines(player);
       if (q.isHq && !player.wedges[q.category]) {
         player.wedges[q.category] = true;
         this.addLog(`${player.name} won the ${CATEGORIES[q.category].name} wedge! (${this.wedgeCount(player)}/${this.options.wedgesToWin})`);
@@ -468,6 +489,56 @@ class Game {
   }
 
   // ----------------------------------------------------------------lifelines
+  /** Human name for a lifeline, for the log. */
+  lifelineName(kind) {
+    return kind === 'fifty' ? '50:50' : `the call to ${llm.displayModel()}`;
+  }
+
+  /** Spend a lifeline and start its recovery clock. */
+  spendLifeline(player, kind) {
+    player.lifelines[kind] = false;
+    player.lifelineSpentAt[kind] = player.correct;
+  }
+
+  /**
+   * Hand a lifeline straight back, cancelling any recovery clock - used when a
+   * call failed, so it never really cost anything.
+   */
+  refundLifeline(player, kind) {
+    player.lifelines[kind] = true;
+    player.lifelineSpentAt[kind] = null;
+  }
+
+  /** "3 more correct answers and it is back", for error messages. */
+  lifelineRemaining(player, kind) {
+    const at = this.lifelineProgress(player, kind);
+    if (at == null) return 'it is available again';
+    const left = LIFELINE_RECOVERY - at;
+    return `${left} more correct answer${left === 1 ? '' : 's'} and it is back`;
+  }
+
+  /** How many correct answers are banked toward a spent lifeline, or null. */
+  lifelineProgress(player, kind) {
+    const spentAt = player.lifelineSpentAt[kind];
+    if (spentAt == null) return null;
+    const earned = player.correct - spentAt;
+    return Math.max(0, Math.min(LIFELINE_RECOVERY, earned));
+  }
+
+  /**
+   * Give back any lifeline the player has now earned. Called on every correct
+   * answer. The count runs from when the lifeline was spent and does not need
+   * to be a streak - a wrong answer stalls progress rather than wiping it.
+   */
+  recoverLifelines(player) {
+    for (const kind of LIFELINE_KINDS) {
+      if (player.lifelineSpentAt[kind] == null) continue;
+      if (this.lifelineProgress(player, kind) < LIFELINE_RECOVERY) continue;
+      this.refundLifeline(player, kind);
+      this.addLog(`${player.name} earned back ${this.lifelineName(kind)} - ${LIFELINE_RECOVERY} correct since it was used.`);
+    }
+  }
+
   /**
    * Stop the answer clock. Used while a lifeline is resolving, because waiting
    * on a language model should not cost you the turn. The remaining time is
@@ -508,11 +579,13 @@ class Game {
 
   /** Drop two of the wrong answers, leaving the right one and a coin flip. */
   useFifty(player, q) {
-    if (!player.lifelines.fifty) return { ok: false, error: 'You have already used 50:50 this game.' };
+    if (!player.lifelines.fifty) {
+      return { ok: false, error: `50:50 is spent - ${this.lifelineRemaining(player, 'fifty')}.` };
+    }
     if (q.eliminated.length) return { ok: false, error: '50:50 has already been used on this question.' };
 
     const wrong = q.choices.map((_, i) => i).filter((i) => i !== q.correctIndex);
-    player.lifelines.fifty = false;
+    this.spendLifeline(player, 'fifty');
     q.eliminated = shuffle(wrong).slice(0, 2).sort((a, b) => a - b);
     this.addLog(`${player.name} used 50:50 - two wrong answers are gone.`);
     return { ok: true };
@@ -525,7 +598,10 @@ class Game {
    */
   useLlm(player, q) {
     if (!player.lifelines.llm) {
-      return { ok: false, error: `You have already asked ${llm.displayModel()} this game.` };
+      return {
+        ok: false,
+        error: `You have already asked ${llm.displayModel()} - ${this.lifelineRemaining(player, 'llm')}.`,
+      };
     }
     // A failed attempt is refunded, so it must also be retryable here -
     // otherwise the refund buys nothing until the next question.
@@ -539,7 +615,7 @@ class Game {
       return { ok: false, error: `${llm.displayModel()} is not answering. Is the model server running?` };
     }
 
-    player.lifelines.llm = false;
+    this.spendLifeline(player, 'llm');
     q.llm = { status: 'thinking', model: llm.displayModel(), text: null, pick: null };
     this.pauseAnswerTimer();
     this.addLog(`${player.name} phones a friend: ${llm.displayModel()}.`);
@@ -557,7 +633,7 @@ class Game {
       llm.markDown();
       // Never reached it, so it never counted. Give the lifeline back even if
       // the game has moved on - it belongs to the player, not the question.
-      player.lifelines.llm = true;
+      this.refundLifeline(player, 'llm');
     }
     if (this.question !== q) {
       // Question is history; nothing left to attach the answer to.
@@ -683,7 +759,14 @@ class Game {
         correct: p.correct,
         asked: p.asked,
         lifelines: { ...p.lifelines },
+        // Correct answers banked toward getting each spent lifeline back;
+        // null once it is in hand again.
+        lifelineProgress: {
+          fifty: this.lifelineProgress(p, 'fifty'),
+          llm: this.lifelineProgress(p, 'llm'),
+        },
       })),
+      lifelineRecovery: LIFELINE_RECOVERY,
       llm: { model: llm.displayModel(), available: llm.ready(), warm: llm.isWarm() },
       turn: cur
         ? {

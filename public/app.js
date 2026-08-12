@@ -377,14 +377,20 @@
       if (s.phase === 'playing' && p.lifelines) {
         const pips = document.createElement('div');
         pips.className = 'plife';
+        const prog = p.lifelineProgress || {};
+        const need = s.lifelineRecovery || 0;
         [
-          { on: p.lifelines.fifty, text: '50', label: '50:50' },
-          { on: p.lifelines.llm, text: '\u{1F916}', label: (s.llm && s.llm.model) || 'the AI' },
+          { on: p.lifelines.fifty, at: prog.fifty, text: '50', label: '50:50' },
+          { on: p.lifelines.llm, at: prog.llm, text: '\u{1F916}', label: (s.llm && s.llm.model) || 'the AI' },
         ].forEach((pip) => {
           const el = document.createElement('span');
           el.className = 'pip' + (pip.on ? '' : ' spent');
           el.textContent = pip.text;
-          el.title = `${pip.label} ${pip.on ? 'available' : 'used'}`;
+          el.title = pip.on
+            ? `${pip.label} available`
+            : pip.at != null && need
+              ? `${pip.label} used - ${pip.at}/${need} correct toward earning it back`
+              : `${pip.label} used`;
           pips.appendChild(el);
         });
         li.appendChild(pips);
@@ -612,6 +618,24 @@
     });
   });
 
+  /**
+   * Show "3/10" on a spent lifeline button so the recovery is visible while it
+   * is happening. Pass at = null to clear it.
+   */
+  function setLifelineTally(btn, at, need) {
+    let tally = btn.querySelector('.ll-tally');
+    if (at == null || !need) {
+      if (tally) tally.remove();
+      return;
+    }
+    if (!tally) {
+      tally = document.createElement('span');
+      tally.className = 'll-tally';
+      btn.appendChild(tally);
+    }
+    tally.textContent = `${at}/${need}`;
+  }
+
   function renderLifelines(s, q, forMe) {
     const row = $('#q-lifelines');
     const mine = me();
@@ -622,12 +646,23 @@
 
     const ll = mine.lifelines || {};
     const llmInfo = s.llm || {};
+    const progress = mine.lifelineProgress || {};
+    const need = s.lifelineRecovery || 0;
+
+    // A spent lifeline is on its way back, so say how far off it is rather
+    // than writing it off for the game.
+    const waitFor = (kind) => {
+      const at = progress[kind];
+      if (at == null || !need) return 'Already used';
+      return `Used - ${at}/${need} correct answers toward earning it back`;
+    };
 
     const fifty = $('#ll-fifty');
     const usedFifty = !ll.fifty;
     fifty.disabled = usedFifty || (q.eliminated || []).length > 0;
     fifty.classList.toggle('spent', usedFifty);
-    fifty.title = usedFifty ? 'Already used this game' : 'Remove two wrong answers';
+    fifty.title = usedFifty ? waitFor('fifty') : 'Remove two wrong answers';
+    setLifelineTally(fifty, usedFifty ? progress.fifty : null, need);
 
     const bot = $('#ll-llm');
     const usedLlm = !ll.llm;
@@ -637,8 +672,9 @@
     bot.disabled = usedLlm || offline || spoken;
     bot.classList.toggle('spent', usedLlm);
     bot.querySelector('.ll-name').textContent = `Ask ${llmInfo.model || 'the AI'}`;
+    setLifelineTally(bot, usedLlm ? progress.llm : null, need);
     bot.title = usedLlm
-      ? 'Already used this game'
+      ? waitFor('llm')
       : offline
         ? `${llmInfo.model || 'The model'} is not reachable right now`
         : llmInfo.warm === false

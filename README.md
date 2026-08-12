@@ -81,14 +81,21 @@ Special spaces:
 
 ### Lifelines
 
-Each player gets **one of each, once per game**, spendable only on their own
-question and only before they answer.
+Each player gets **one of each**, spendable only on their own question and only
+before they answer.
 
 - **50:50** — two of the wrong answers are struck off the card, leaving the
   right one and a coin flip.
 - **Ask the AI** — the question is put to a very small language model running on
   your own machine, and its reply goes up on the card for the whole room to see.
   The answer clock stops while it thinks.
+
+**They come back.** A spent lifeline returns once you have answered **10 more
+questions correctly**. Only your own answers count, and they do not have to be
+consecutive — a wrong answer stalls the recovery, it never resets it. Each
+lifeline runs its own count from the moment it was spent, so the two recover
+independently. The button shows how far along you are (`4/10`), and a failed AI
+call is refunded outright rather than starting a count.
 
 The AI lifeline defaults to **qwen2.5:0.5b**, which is a half-billion-parameter
 model and therefore not very good at trivia. That is the point — treat it as a

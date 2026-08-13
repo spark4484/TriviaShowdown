@@ -161,7 +161,7 @@ wedges — so switching is instant and the board simply relabels itself.
 | 1 | Entertainment | Computer Science & Tech |
 | 2 | History | Mythology & Folklore |
 | 3 | Arts & Literature | Anime & Manga |
-| 4 | Science & Nature | Science & Nature |
+| 4 | Science & Nature | Machine Learning |
 | 5 | Sports & Leisure | Video Games |
 
 History and Science & Nature are the same questions in both editions — the nerd

@@ -159,7 +159,7 @@ wedges — so switching is instant and the board simply relabels itself.
 | --- | --- | --- |
 | 0 | Geography | Science Fiction |
 | 1 | Entertainment | Computer Science & Tech |
-| 2 | History | History |
+| 2 | History | Mythology & Folklore |
 | 3 | Arts & Literature | Anime & Manga |
 | 4 | Science & Nature | Science & Nature |
 | 5 | Sports & Leisure | Video Games |

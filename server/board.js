@@ -14,14 +14,39 @@
 
 // Short codes are used as the on-board glyphs - deliberately plain text so they
 // render identically on every OS (emoji fonts are not guaranteed anywhere).
-const CATEGORIES = [
-  { id: 0, key: 'geography', name: 'Geography', short: 'Geo', color: '#2d7dd2' },
-  { id: 1, key: 'entertainment', name: 'Entertainment', short: 'Ent', color: '#e0489f' },
-  { id: 2, key: 'history', name: 'History', short: 'His', color: '#eab308' },
-  { id: 3, key: 'arts', name: 'Arts & Literature', short: 'Art', color: '#9061f9' },
-  { id: 4, key: 'science', name: 'Science & Nature', short: 'Sci', color: '#22c55e' },
-  { id: 5, key: 'sports', name: 'Sports & Leisure', short: 'Spt', color: '#f97316' },
-];
+//
+// Two editions share one board. The slots, the ids and the colours are the same
+// in both - only the subject of each slot changes - so a wedge is the same
+// wedge whichever edition you are playing, and nothing downstream of an id has
+// to care which one it is. Question banks are matched slot for slot in
+// questions.js (classic) and questions-nerd.js (nerd).
+const CATEGORY_SETS = {
+  classic: [
+    { id: 0, key: 'geography', name: 'Geography', short: 'Geo', color: '#2d7dd2' },
+    { id: 1, key: 'entertainment', name: 'Entertainment', short: 'Ent', color: '#e0489f' },
+    { id: 2, key: 'history', name: 'History', short: 'His', color: '#eab308' },
+    { id: 3, key: 'arts', name: 'Arts & Literature', short: 'Art', color: '#9061f9' },
+    { id: 4, key: 'science', name: 'Science & Nature', short: 'Sci', color: '#22c55e' },
+    { id: 5, key: 'sports', name: 'Sports & Leisure', short: 'Spt', color: '#f97316' },
+  ],
+  nerd: [
+    { id: 0, key: 'religion', name: 'Religions of the World', short: 'Rel', color: '#2d7dd2' },
+    { id: 1, key: 'compsci', name: 'Computer Science & Tech', short: 'CS', color: '#e0489f' },
+    { id: 2, key: 'history', name: 'History', short: 'His', color: '#eab308' },
+    { id: 3, key: 'anime', name: 'Anime & Manga', short: 'Ani', color: '#9061f9' },
+    { id: 4, key: 'science', name: 'Science & Nature', short: 'Sci', color: '#22c55e' },
+    { id: 5, key: 'games', name: 'Video Games', short: 'Vid', color: '#f97316' },
+  ],
+};
+
+const EDITIONS = Object.keys(CATEGORY_SETS);
+const DEFAULT_EDITION = 'classic';
+
+function categoriesFor(edition) {
+  return CATEGORY_SETS[edition] || CATEGORY_SETS[DEFAULT_EDITION];
+}
+
+const CATEGORIES = CATEGORY_SETS[DEFAULT_EDITION];
 
 const RING_SIZE = 42;
 const SEGMENT = RING_SIZE / 6; // 7 spaces per segment
@@ -159,8 +184,22 @@ function publicBoard() {
       };
     }),
     geometry: BOARD.geometry,
+    // The default set, for the first paint. A room's own edition arrives with
+    // the game state and re-skins the board if it differs.
     categories: CATEGORIES,
   };
 }
 
-module.exports = { BOARD, CATEGORIES, TYPE, reachable, publicBoard, RING_SIZE, SPOKE_LEN };
+module.exports = {
+  BOARD,
+  CATEGORIES,
+  CATEGORY_SETS,
+  EDITIONS,
+  DEFAULT_EDITION,
+  categoriesFor,
+  TYPE,
+  reachable,
+  publicBoard,
+  RING_SIZE,
+  SPOKE_LEN,
+};

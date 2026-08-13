@@ -6,7 +6,9 @@ One Node process serves both the game and the web client, so a single
 
 - Six categories, six wedges, a wheel with six spokes and a hub
 - Real board movement: you pick which way to go, and you can cut through the hub
-- 900 multiple-choice questions across two difficulty tiers, plus an answer timer
+- Two editions, switched from the lobby: **Classic** and **Nerd**
+- Nearly 1,400 multiple-choice questions across two difficulty tiers, plus an
+  answer timer
 - Two lifelines per player per game: 50:50, and phone-a-friend to a very small LLM
 - Thumbs up/down on every question — enough downvotes and it stops being dealt
 - Room codes, live game log, chat, and reconnect-without-losing-your-seat
@@ -146,15 +148,35 @@ If nothing is listening, the button greys out and everything else carries on as
 normal — the lifeline is optional, not a dependency. If the model is reachable
 but the call fails partway, the player gets the lifeline back.
 
+### Editions
+
+The **Edition** switch at the top of the lobby settings picks which six subjects
+the board is made of. Only the host can change it, and only before the game
+starts. The wheel itself does not change — same spaces, same colours, same
+wedges — so switching is instant and the board simply relabels itself.
+
+| Slot | Classic | Nerd |
+| --- | --- | --- |
+| 0 | Geography | Religions of the World |
+| 1 | Entertainment | Computer Science & Tech |
+| 2 | History | History |
+| 3 | Arts & Literature | Anime & Manga |
+| 4 | Science & Nature | Science & Nature |
+| 5 | Sports & Leisure | Video Games |
+
+History and Science & Nature are the same questions in both editions — the nerd
+bank pulls them straight out of the classic one rather than copying them, so a
+question keeps its id and its ratings whichever edition dealt it.
+
 ### Difficulty
 
 The lobby has three settings, and **Hard** is the default:
 
-| Setting | Draws from | Feel |
-| --- | --- | --- |
-| Easy | 390 questions | General knowledge — most players get a good share |
-| Hard | 510 questions | Pub-quiz final round, with plausible distractors |
-| Mixed | all 900 | A bit of both |
+| Setting | Classic draws from | Nerd draws from | Feel |
+| --- | --- | --- | --- |
+| Easy | 377 questions | 280 questions | General knowledge — most players get a good share |
+| Hard | 630 questions | 430 questions | Pub-quiz final round, with plausible distractors |
+| Mixed | all 1007 | all 710 | A bit of both |
 
 Difficulty has a real effect on pacing, because a wrong answer ends your turn.
 Median questions per two-player game, measured over simulated runs:
@@ -177,7 +199,8 @@ a **Skip turn** button, and any player can skip someone who is offline.
 
 ## Adding your own questions
 
-Everything lives in [server/questions.js](server/questions.js), split into an
+The classic bank is [server/questions.js](server/questions.js) and the nerd bank
+is [server/questions-nerd.js](server/questions-nerd.js). Both are split into an
 `EASY` and a `HARD` array. Append entries to whichever fits — the difficulty tag
 is applied automatically at the bottom of the file, so entries in both arrays
 look identical. The first answer is the correct one, and the server shuffles the
@@ -187,8 +210,10 @@ options before sending them out:
 { c: 0, q: "What is the capital of Australia?", a: ["Canberra", "Sydney", "Melbourne", "Perth"] },
 ```
 
-`c` is the category: `0` Geography, `1` Entertainment, `2` History,
-`3` Arts & Literature, `4` Science & Nature, `5` Sports & Leisure.
+`c` is the board slot, which means a different subject per edition — see the
+table above. In the nerd bank, slots `2` and `4` are carried over from the
+classic file and are not listed again, so add History and Science questions to
+`server/questions.js` and both editions get them.
 
 Restart the server to pick up changes. Each category is dealt from its own
 shuffled deck that only reshuffles once exhausted, so you will not see the same
@@ -214,7 +239,9 @@ npm run ratings -- 20  # just the 20 worst
 ```
 
 That report is the eviction shortlist: fix the wording or delete the entry from
-`server/questions.js`. Ratings are keyed on a hash of the question text, so
+whichever bank it came from — the category column names the edition's subject,
+so a row tagged *Video Games* is in `server/questions-nerd.js` and one tagged
+*Geography* is in `server/questions.js`. Ratings are keyed on a hash of the question text, so
 reordering the file is safe, but rewording a question resets its score — which
 is what you want, since it is a different question afterwards.
 
@@ -228,8 +255,9 @@ server/
   index.js      HTTP + WebSocket server, static file serving
   rooms.js      room registry, socket fan-out, idle-room cleanup
   game.js       turn state machine, scoring, timers
-  board.js      wheel geometry and the movement graph
-  questions.js  the question bank
+  board.js      wheel geometry, the movement graph, and both category sets
+  questions.js  the classic question bank
+  questions-nerd.js  the nerd edition bank
   votes.js      question ratings: tallies, persistence, retirement rule
   llm.js        the "ask a small model" lifeline, and whether it is reachable
 scripts/

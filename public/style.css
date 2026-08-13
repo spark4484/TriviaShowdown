@@ -195,6 +195,22 @@ select { cursor: pointer; }
 
 .settings { display: flex; flex-direction: column; gap: 8px; }
 
+/* Edition switch - a pair of buttons rather than a select, because it changes
+   every category on the board and deserves to look like a decision. */
+.edition-toggle { display: flex; gap: 4px; padding: 3px; background: var(--panel); border: 1px solid var(--line); border-radius: 9px; }
+.edition-btn {
+  appearance: none; cursor: pointer;
+  padding: 5px 13px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--muted);
+  font: inherit; font-size: 13px; font-weight: 600;
+  transition: background .12s, color .12s;
+}
+.edition-btn:hover:not(:disabled) { color: var(--text); }
+.edition-btn.active { background: var(--accent); color: #0b0e18; }
+.edition-toggle.locked .edition-btn { cursor: default; }
+.edition-toggle.locked .edition-btn:not(.active) { opacity: .55; }
+.categories-note { font-size: 12px; line-height: 1.45; margin-top: -2px; }
+
 .player-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; overflow: auto; }
 .player-row {
   display: flex; align-items: center; gap: 10px;

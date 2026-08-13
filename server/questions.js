@@ -1078,29 +1078,41 @@ function questionId(text) {
   return h.toString(36).padStart(7, '0');
 }
 
-// The difficulty tag and id are applied here so entries above stay easy to read
-// and edit - everything in the arrays is just { c, q, a }.
-const ALL = [
-  ...EASY.map((q) => ({ ...q, d: 1, id: questionId(q.q) })),
-  ...HARD.map((q) => ({ ...q, d: 2, id: questionId(q.q) })),
-];
+/**
+ * Tag a pair of tiers and check them over. The difficulty tag and id are applied
+ * here so entries in the arrays above stay easy to read and edit - everything in
+ * them is just { c, q, a }.
+ *
+ * Shared with the nerd bank (questions-nerd.js), which is assembled the same way
+ * from its own arrays plus the two categories it carries over from this file.
+ */
+function build(easy, hard, source) {
+  const all = [
+    ...easy.map((q) => ({ ...q, d: 1, id: questionId(q.q) })),
+    ...hard.map((q) => ({ ...q, d: 2, id: questionId(q.q) })),
+  ];
 
-// Duplicate wording and (vanishingly unlikely) hash collisions both land here.
-// Either way two questions would share a rating, so fail loudly at boot rather
-// than quietly mis-attributing votes.
-const seen = new Map();
-for (const q of ALL) {
-  const clash = seen.get(q.id);
-  if (clash) {
-    throw new Error(
-      `questions.js: id collision "${q.id}" between\n  ${clash.q}\n  ${q.q}\n` +
-      'If these are the same question, delete one; if not, reword one slightly.'
-    );
+  // Duplicate wording and (vanishingly unlikely) hash collisions both land here.
+  // Either way two questions would share a rating, so fail loudly at boot rather
+  // than quietly mis-attributing votes.
+  const seen = new Map();
+  for (const q of all) {
+    const clash = seen.get(q.id);
+    if (clash) {
+      throw new Error(
+        `${source}: id collision "${q.id}" between\n  ${clash.q}\n  ${q.q}\n` +
+        'If these are the same question, delete one; if not, reword one slightly.'
+      );
+    }
+    seen.set(q.id, q);
   }
-  seen.set(q.id, q);
+  return all;
 }
+
+const ALL = build(EASY, HARD, 'questions.js');
 
 module.exports = ALL;
 module.exports.EASY = EASY;
 module.exports.HARD = HARD;
 module.exports.questionId = questionId;
+module.exports.build = build;

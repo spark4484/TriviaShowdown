@@ -38,6 +38,12 @@
     chat: [],
     pendingAnswer: null,
     tab: 'log',
+    // The host's pick, kept here because the toggle lives in the lobby panel
+    // but "Create a game" is pressed on the home screen.
+    edition: 'classic',
+    // Which edition the board is currently painted in, so it is only redrawn
+    // when it actually changes.
+    drawnEdition: null,
   };
 
   // ------------------------------------------------------------- websocket
@@ -96,6 +102,7 @@
       case 'joined':
         app.code = msg.code;
         app.board = msg.board;
+        app.drawnEdition = null; // the room's edition arrives with the state
         sessionStorage.setItem('tsw.room', msg.code);
         history.replaceState(null, '', '#' + msg.code);
         Board.init($('#board'), msg.board);
@@ -152,16 +159,7 @@
     homeError('');
     if (!app.connected) return homeError('Still connecting to the server…');
     store.set('tsw.name', currentName());
-    send({
-      t: 'create',
-      playerId,
-      name: currentName(),
-      options: {
-        wedgesToWin: Number($('#opt-wedges').value),
-        answerSeconds: Number($('#opt-seconds').value),
-        difficulty: $('#opt-difficulty').value,
-      },
-    });
+    send({ t: 'create', playerId, name: currentName(), options: gameOptions() });
   });
 
   function doJoin() {
@@ -208,15 +206,35 @@
   $('#opt-wedges').addEventListener('change', pushOptions);
   $('#opt-seconds').addEventListener('change', pushOptions);
   $('#opt-difficulty').addEventListener('change', pushOptions);
+
+  function gameOptions() {
+    return {
+      wedgesToWin: Number($('#opt-wedges').value),
+      answerSeconds: Number($('#opt-seconds').value),
+      difficulty: $('#opt-difficulty').value,
+      edition: app.edition,
+    };
+  }
+
   function pushOptions() {
     if (!app.code) return;
-    send({
-      t: 'setOptions',
-      options: {
-        wedgesToWin: Number($('#opt-wedges').value),
-        answerSeconds: Number($('#opt-seconds').value),
-        difficulty: $('#opt-difficulty').value,
-      },
+    send({ t: 'setOptions', options: gameOptions() });
+  }
+
+  // Edition switch. Only the host's clicks reach the server, but the buttons
+  // move locally first so the choice made before creating a room sticks.
+  $$('#opt-edition .edition-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      app.edition = btn.dataset.edition;
+      markEdition(app.edition);
+      pushOptions();
+    });
+  });
+
+  function markEdition(edition) {
+    $$('#opt-edition .edition-btn').forEach((b) => {
+      b.classList.toggle('active', b.dataset.edition === edition);
     });
   }
 
@@ -272,7 +290,10 @@
   function playerById(id) {
     return app.state ? app.state.players.find((p) => p.id === id) : null;
   }
+  // The room's own six categories once state has arrived; board.json's default
+  // set covers the moment before that.
   function cats() {
+    if (app.state && app.state.categories) return app.state.categories;
     return app.board ? app.board.categories : [];
   }
 
@@ -280,6 +301,7 @@
     const s = app.state;
     if (!s || !app.board) return;
 
+    repaintBoard(s);
     renderLobbyPanel(s);
     renderPlayers(s);
     renderLog(s);
@@ -299,6 +321,16 @@
     });
   }
 
+  // Switching edition changes the label and glyph on every space, and those are
+  // drawn once into the static layer - so redraw it, but only on a real change.
+  function repaintBoard(s) {
+    const edition = (s.options && s.options.edition) || 'classic';
+    if (edition === app.drawnEdition) return;
+    app.board.categories = cats();
+    app.drawnEdition = edition;
+    Board.init($('#board'), app.board);
+  }
+
   function renderLobbyPanel(s) {
     const panel = $('#lobby-panel');
     const inLobby = s.phase === 'lobby';
@@ -312,6 +344,16 @@
     $('#opt-wedges').disabled = !host;
     $('#opt-seconds').disabled = !host;
     $('#opt-difficulty').disabled = !host;
+
+    // The room is the authority on the edition - a guest who clicked the toggle
+    // before joining gets pulled back into line here.
+    app.edition = s.options.edition || 'classic';
+    markEdition(app.edition);
+    $$('#opt-edition .edition-btn').forEach((b) => { b.disabled = !host; });
+    $('#opt-edition').classList.toggle('locked', !host);
+    // Say what the six categories actually are - "Nerd" on its own tells you
+    // nothing about whether you want to play it.
+    $('#edition-note').textContent = cats().map((c) => c.name).join(' · ');
     // Harder questions mean more missed turns, which stretches the game out a
     // lot. Say so here rather than letting people find out an hour in.
     const blurb = {

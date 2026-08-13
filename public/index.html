@@ -77,6 +77,14 @@
             <button id="btn-copy" class="btn small">Copy</button>
           </div>
           <div id="settings" class="settings">
+            <div class="field row">
+              <span>Edition</span>
+              <div id="opt-edition" class="edition-toggle" role="group" aria-label="Question edition">
+                <button type="button" class="edition-btn active" data-edition="classic">Classic</button>
+                <button type="button" class="edition-btn" data-edition="nerd">Nerd</button>
+              </div>
+            </div>
+            <p id="edition-note" class="hint categories-note"></p>
             <label class="field row">
               <span>Difficulty</span>
               <select id="opt-difficulty">

@@ -1,7 +1,12 @@
 'use strict';
 
-const { BOARD, CATEGORIES, TYPE, reachable } = require('./board');
-const QUESTIONS = require('./questions');
+const { BOARD, CATEGORIES, EDITIONS, DEFAULT_EDITION, categoriesFor, TYPE, reachable } = require('./board');
+
+// One bank per edition, matched slot for slot to the category sets in board.js.
+const BANKS = {
+  classic: require('./questions'),
+  nerd: require('./questions-nerd'),
+};
 const { votes } = require('./votes');
 const llm = require('./llm');
 
@@ -48,6 +53,7 @@ const DEFAULT_OPTIONS = {
   wedgesToWin: 6,
   answerSeconds: 30, // 0 = no limit
   difficulty: 'hard',
+  edition: DEFAULT_EDITION,
 };
 
 function shuffle(list) {
@@ -215,6 +221,13 @@ class Game {
       this.options.difficulty = options.difficulty;
       this.decks = CATEGORIES.map(() => []); // stale decks would hold the old tier
     }
+    if (EDITIONS.includes(options.edition) && options.edition !== this.options.edition) {
+      this.options.edition = options.edition;
+      // Decks are indices into the edition's own bank, so they mean nothing
+      // once the bank underneath them changes.
+      this.decks = CATEGORIES.map(() => []);
+      this.addLog(`Switched to the ${options.edition === 'nerd' ? 'nerd' : 'classic'} edition.`);
+    }
     return { ok: true };
   }
 
@@ -342,24 +355,35 @@ class Game {
     return { ok: true };
   }
 
+  /** The question bank this room is playing from. */
+  bank() {
+    return BANKS[this.options.edition] || BANKS[DEFAULT_EDITION];
+  }
+
+  /** The six category descriptors this room is playing with. */
+  categories() {
+    return categoriesFor(this.options.edition);
+  }
+
   drawQuestion(category) {
+    const questions = this.bank();
     if (!this.decks[category] || this.decks[category].length === 0) {
       const allowed = DIFFICULTY_POOLS[this.options.difficulty] || DIFFICULTY_POOLS.hard;
       const tier = [];
-      QUESTIONS.forEach((q, i) => {
+      questions.forEach((q, i) => {
         if (q.c === category && allowed.includes(q.d)) tier.push(i);
       });
-      let pool = tier.filter((i) => !votes.isRetired(QUESTIONS[i].id));
+      let pool = tier.filter((i) => !votes.isRetired(questions[i].id));
       if (pool.length === 0) {
         // Players have thumbed down everything in this slice of the bank. A
         // dud question still beats a turn that cannot resolve, so deal anyway.
-        console.warn(`[votes] every ${CATEGORIES[category].name} question at this difficulty is retired - ignoring ratings`);
+        console.warn(`[votes] every ${this.categories()[category].name} question at this difficulty is retired - ignoring ratings`);
         pool = tier;
       }
       this.decks[category] = shuffle(pool);
     }
     const idx = this.decks[category].pop();
-    return QUESTIONS[idx];
+    return questions[idx];
   }
 
   askQuestion(player, category, isHq, isFinal) {
@@ -387,7 +411,8 @@ class Game {
     this.pausedMs = null; // any stopped clock belonged to the previous question
     player.asked++;
     this.step = 'answer';
-    const label = isFinal ? 'the winning question' : isHq ? `a ${CATEGORIES[category].name} headquarters question` : `a ${CATEGORIES[category].name} question`;
+    const catName = this.categories()[category].name;
+    const label = isFinal ? 'the winning question' : isHq ? `a ${catName} headquarters question` : `a ${catName} question`;
     this.addLog(`${player.name} draws ${label}.`);
 
     if (this.options.answerSeconds > 0) {
@@ -439,7 +464,7 @@ class Game {
       this.recoverLifelines(player);
       if (q.isHq && !player.wedges[q.category]) {
         player.wedges[q.category] = true;
-        this.addLog(`${player.name} won the ${CATEGORIES[q.category].name} wedge! (${this.wedgeCount(player)}/${this.options.wedgesToWin})`);
+        this.addLog(`${player.name} won the ${this.categories()[q.category].name} wedge! (${this.wedgeCount(player)}/${this.options.wedgesToWin})`);
       } else {
         this.addLog(`${player.name} answered correctly and rolls again.`);
       }
@@ -749,6 +774,9 @@ class Game {
       hostId: this.hostId,
       options: this.options,
       wedgesToWin: this.options.wedgesToWin,
+      // The board geometry is edition-agnostic and ships once in board.json;
+      // this is what the client paints onto it.
+      categories: this.categories(),
       players: this.players.map((p) => ({
         id: p.id,
         name: p.name,

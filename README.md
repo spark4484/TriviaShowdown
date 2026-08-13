@@ -164,10 +164,6 @@ wedges — so switching is instant and the board simply relabels itself.
 | 4 | Science & Nature | Machine Learning |
 | 5 | Sports & Leisure | Video Games |
 
-History and Science & Nature are the same questions in both editions — the nerd
-bank pulls them straight out of the classic one rather than copying them, so a
-question keeps its id and its ratings whichever edition dealt it.
-
 ### Difficulty
 
 The lobby has three settings, and **Hard** is the default:

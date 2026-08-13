@@ -30,7 +30,7 @@ const CATEGORY_SETS = {
     { id: 5, key: 'sports', name: 'Sports & Leisure', short: 'Spt', color: '#f97316' },
   ],
   nerd: [
-    { id: 0, key: 'religion', name: 'Religions of the World', short: 'Rel', color: '#2d7dd2' },
+    { id: 0, key: 'scifi', name: 'Science Fiction', short: 'SF', color: '#2d7dd2' },
     { id: 1, key: 'compsci', name: 'Computer Science & Tech', short: 'CS', color: '#e0489f' },
     { id: 2, key: 'mythology', name: 'Mythology & Folklore', short: 'Myt', color: '#eab308' },
     { id: 3, key: 'anime', name: 'Anime & Manga', short: 'Ani', color: '#9061f9' },

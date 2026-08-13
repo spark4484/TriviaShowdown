@@ -157,7 +157,7 @@ wedges — so switching is instant and the board simply relabels itself.
 
 | Slot | Classic | Nerd |
 | --- | --- | --- |
-| 0 | Geography | Religions of the World |
+| 0 | Geography | Science Fiction |
 | 1 | Entertainment | Computer Science & Tech |
 | 2 | History | History |
 | 3 | Arts & Literature | Anime & Manga |

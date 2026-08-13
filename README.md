@@ -50,8 +50,10 @@ open for the whole session.
 | `QUESTION_RETIRE_DOWNS` | `3` | Downvotes before a question can be retired |
 | `QUESTION_RETIRE_RATIO` | `2` | How far downs must outweigh ups to retire |
 | `LLM_URL` | `http://127.0.0.1:11434` | Where the lifeline model is served |
-| `LLM_MODEL` | `qwen2.5:0.5b` | Model to ask |
+| `LLM_MODEL` | `qwen3:8b` | Model to ask |
 | `LLM_API` | auto | `ollama` or `openai`; guessed from the URL |
+| `LLM_THINK` | off | Let the model reason before answering — better, but 10–30s slower |
+| `LLM_TEMPERATURE` | `0.4` | Higher wanders more; the lifeline gets funnier and worse |
 | `LLM_TIMEOUT_MS` | `45000` | How long to wait before giving up on an answer |
 | `LLM_LOAD_TIMEOUT_MS` | `120000` | How long to allow for the initial model load |
 | `LLM_KEEP_ALIVE` | `30m` | How long Ollama keeps the model in memory |
@@ -86,9 +88,9 @@ before they answer.
 
 - **50:50** — two of the wrong answers are struck off the card, leaving the
   right one and a coin flip.
-- **Ask the AI** — the question is put to a very small language model running on
-  your own machine, and its reply goes up on the card for the whole room to see.
-  The answer clock stops while it thinks.
+- **Ask the AI** — the question is put to a language model running on your own
+  machine, and its reply goes up on the card for the whole room to see. The
+  answer clock stops while it thinks.
 
 **They come back.** A spent lifeline returns once you have answered **10 more
 questions correctly**. Only your own answers count, and they do not have to be
@@ -97,20 +99,31 @@ lifeline runs its own count from the moment it was spent, so the two recover
 independently. The button shows how far along you are (`4/10`), and a failed AI
 call is refunded outright rather than starting a count.
 
-The AI lifeline defaults to **qwen2.5:0.5b**, which is a half-billion-parameter
-model and therefore not very good at trivia. That is the point — treat it as a
-suggestion from an over-confident friend, not an oracle. It is often wrong,
-occasionally right for the wrong reason, and reliably funny.
+The AI lifeline defaults to **qwen3:8b**, which is genuinely worth phoning: it
+answers in well under a second and gets most trivia right, missing mainly on
+the obscure end where you would want a lifeline anyway.
+
+It used to default to qwen2.5:0.5b on the theory that a hopeless friend was
+funnier than a useful one. In practice it was hopeless enough that nobody ever
+spent the lifeline, so the joke cost a mechanic. If you want the old comedy
+back, `LLM_MODEL=qwen2.5:0.5b LLM_TEMPERATURE=0.8 npm start`.
+
+Qwen3 can also reason at length before answering, which is off by default —
+it buys a few points of accuracy for ten to thirty seconds of dead air with
+the room watching a spinner. `LLM_THINK=1` turns it on.
 
 You need a model server running locally. Either works:
 
 ```bash
 # Ollama (the default - nothing else to configure)
-ollama pull qwen2.5:0.5b
+ollama pull qwen3:8b
 
 # ...or any OpenAI-compatible server, e.g. LM Studio or llama.cpp
-LLM_URL=http://127.0.0.1:1234/v1 LLM_MODEL=qwen2.5-0.5b-instruct npm start
+LLM_URL=http://127.0.0.1:1234/v1 LLM_MODEL=qwen3-8b npm start
 ```
+
+A smaller Qwen3 works too if 5 GB of weights is more than you want resident —
+`qwen3:4b` is quicker to load and still far better than the old default.
 
 You usually do **not** need to run `ollama serve` yourself — installing Ollama
 registers it as a service that is already listening. If `ollama serve` prints
@@ -120,10 +133,13 @@ already; ignore it. Confirm with `curl http://127.0.0.1:11434/api/tags`.
 The server preloads the model at startup and pokes it periodically to keep it
 resident, because a cold `llama-server` can spend fifteen seconds on CUDA setup
 before it reads a single token — long enough that the first player to press the
-button used to eat the whole timeout. Watch for this line at boot:
+button used to eat the whole timeout. The preload runs a token through the
+model rather than only loading it: on an 8b the weights being resident still
+left the first real prompt waiting ten seconds on graph setup. Watch for this
+line at boot:
 
 ```
-[llm] qwen2.5:0.5b loaded and warm (13.1s) - the lifeline will answer instantly
+[llm] qwen3:8b loaded and warm (2.5s) - the lifeline will answer instantly
 ```
 
 If nothing is listening, the button greys out and everything else carries on as

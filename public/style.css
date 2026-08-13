@@ -332,8 +332,8 @@ select { cursor: pointer; }
 .choice.eliminated .key { text-decoration: line-through; }
 .choice-bot { margin-left: auto; font-size: 15px; line-height: 1; flex: none; }
 
-/* The model's reply, shown to the whole room. It is a very small model, so
-   this is at least as often comedy as it is help. */
+/* The model's reply, shown to the whole room - right or wrong, and it is not
+   always right. Dashed border, because this is advice and not the answer. */
 .llm-box {
   margin-top: 14px;
   padding: 11px 13px;

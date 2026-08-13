@@ -379,7 +379,7 @@ class Game {
       revealed: false,
       timedOut: false,
       // Lifeline residue, per question: which choices 50:50 removed, and what
-      // the small language model had to say if anyone phoned it.
+      // the language model had to say if anyone phoned it.
       eliminated: [],
       llm: null,
     };
@@ -592,7 +592,7 @@ class Game {
   }
 
   /**
-   * Phone a very small language model. The reply goes to the whole room, right
+   * Phone a local language model. The reply goes to the whole room, right
    * or wrong, and the clock stops until it lands. If the model cannot be
    * reached at all the lifeline is handed back - that is our fault, not yours.
    */

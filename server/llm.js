@@ -1,11 +1,18 @@
 'use strict';
 
 /**
- * The "ask a small language model" lifeline.
+ * The "ask a language model" lifeline.
  *
- * Talks to a locally-run model - by default qwen2.5:0.5b served by Ollama. Half
- * a billion parameters is not very many, and that is the entire point: the
- * lifeline is a gamble, not an oracle. A confidently wrong answer is a feature.
+ * Talks to a locally-run model - by default qwen3:8b served by Ollama. The
+ * lifeline started out on qwen2.5:0.5b on the theory that a confidently wrong
+ * friend is funnier than a right one, but half a billion parameters turned out
+ * to be funny exactly once: over hours of play it got two questions right, so
+ * nobody ever spent the lifeline. A friend worth phoning is the better game.
+ *
+ * Qwen3 is a hybrid reasoning model and will happily spend its whole token
+ * budget on a <think> block before it says a letter. Thinking is therefore
+ * turned off by default - see THINK below - which keeps an answer at a second
+ * or two rather than half a minute of dead air on screen.
  *
  * No dependencies. Node 18's global fetch does the work, and two API shapes are
  * supported so llama.cpp's server or LM Studio work just as well as Ollama:
@@ -25,8 +32,14 @@
  */
 
 const URL_BASE = (process.env.LLM_URL || 'http://127.0.0.1:11434').replace(/\/+$/, '');
-const MODEL = process.env.LLM_MODEL || 'qwen2.5:0.5b';
+const MODEL = process.env.LLM_MODEL || 'qwen3:8b';
 const API = (process.env.LLM_API || (/\/v1$/.test(URL_BASE) ? 'openai' : 'ollama')).toLowerCase();
+
+// Let the model reason out loud before answering. Off by default: it buys a few
+// points of accuracy for ten to thirty seconds of silence, and the answer clock
+// is paused throughout, so the table just sits there watching a spinner.
+// LLM_THINK=1 turns it back on for anyone who would rather have the points.
+const THINK = /^(1|true|yes|on)$/i.test(String(process.env.LLM_THINK || ''));
 
 // Generous, because the answer clock is paused while we wait. The old 20s was
 // not enough: a cold llama-server spends ten-plus seconds on CUDA init before
@@ -50,12 +63,36 @@ const KEEP_ALIVE = process.env.LLM_KEEP_ALIVE || '30m';
 // deadline. Re-poking the model well inside KEEP_ALIVE keeps it resident.
 const KEEP_WARM_MS = Math.max(60000, Number(process.env.LLM_KEEP_WARM_MS) || 600000);
 
+// The trailing /no_think is Qwen3's own soft switch. Ollama has a proper `think`
+// field and we send that too, but the token works everywhere - llama.cpp and LM
+// Studio have no such field - and costs nothing on models that ignore it.
 const SYSTEM = 'You are a contestant\'s phone-a-friend on a television quiz show. '
   + 'You are enthusiastic and you always commit to one answer, even when you are unsure. '
-  + 'Reply with the letter of your choice and one short sentence of reasoning. Never say you cannot answer.';
+  + 'Never say you cannot answer. '
+  // Reasoning first, letter last. Demanding the letter up front sounds tidier
+  // and parses beautifully, but it makes the model commit before it has
+  // thought, and on a question it finds hard it then spends the rest of the
+  // reply arguing with itself - which is both a mess on the card and a pick
+  // that no longer matches the words underneath it.
+  + 'Give one short sentence of reasoning, then your choice on the end as "Answer: X".'
+  + (THINK ? '' : ' /no_think');
 
-// Trimmed hard: the card has room for a sentence or two, and a 0.5b model left
-// to run will happily restate the whole question back at you.
+// 0.8 was set when the lifeline ran on a 0.5b and the flailing was the joke.
+// A model that knows the answer only needs enough slack to sound human, and a
+// hot one talks itself out of correct answers mid-sentence - which also breaks
+// parsePick, since the letter it opens with is no longer the one it ends on.
+const TEMPERATURE = Number.isFinite(Number(process.env.LLM_TEMPERATURE))
+  && process.env.LLM_TEMPERATURE !== undefined && process.env.LLM_TEMPERATURE !== ''
+  ? Number(process.env.LLM_TEMPERATURE)
+  : 0.4;
+
+// Enough for a letter and a sentence. Thinking needs far more headroom: the
+// budget covers the reasoning as well, and a reply cut off mid-thought reaches
+// parsePick with no letter in it at all.
+const MAX_TOKENS = THINK ? 800 : 160;
+
+// Trimmed hard: the card has room for a sentence or two, and a model left to run
+// will happily restate the whole question back at you.
 const MAX_REPLY_CHARS = 400;
 
 const state = {
@@ -120,9 +157,13 @@ async function probeOnce() {
 }
 
 /**
- * Pull the weights into memory without asking anything of them. Ollama treats
- * an empty prompt as exactly this request. The OpenAI shape has no load call,
- * so we spend a single token to get the same effect.
+ * Pull the weights into memory and run one token through them.
+ *
+ * Ollama loads on an empty prompt, but loaded is not the same as warm: the
+ * first prompt to actually reach the model still waits on graph and cache
+ * setup, which measured ten seconds on an 8b even with the weights already
+ * resident. Spending one token here moves that cost to boot, where nobody is
+ * sitting and watching.
  */
 async function loadModel() {
   if (API === 'openai') {
@@ -132,7 +173,13 @@ async function loadModel() {
       max_tokens: 1,
     }, LOAD_TIMEOUT_MS);
   } else {
-    await post('/api/generate', { model: MODEL, prompt: '', keep_alive: KEEP_ALIVE }, LOAD_TIMEOUT_MS);
+    await post('/api/generate', {
+      model: MODEL,
+      prompt: 'hi',
+      stream: false,
+      keep_alive: KEEP_ALIVE,
+      options: { num_predict: 1 },
+    }, LOAD_TIMEOUT_MS);
   }
 }
 
@@ -217,7 +264,7 @@ function start() {
 function buildPrompt(question, choices) {
   const lettered = choices.map((c, i) => `${'ABCD'[i]}) ${c}`).join('\n');
   return `Quiz question:\n${question}\n\n${lettered}\n\n`
-    + 'Which letter is correct? Answer in the form "B - short reason".';
+    + 'Which letter is correct? Reply in the form "Short reason. Answer: B".';
 }
 
 /**
@@ -226,11 +273,16 @@ function buildPrompt(question, choices) {
  * Order matters. An explicit "the answer is C" beats a leading letter, which in
  * turn beats matching the answer text, because a reply that opens with "A "
  * is as likely to be the article as the option.
+ *
+ * The last such label wins rather than the first: the model is asked to reason
+ * and then commit, so anything earlier is working out loud, and a reply that
+ * doubles back has its real answer at the end.
  */
 function parsePick(reply, choices) {
   const text = String(reply || '');
 
-  const labelled = text.match(/\b(?:answer|option|choice|pick|say|go with)\b[^A-Za-z0-9]{0,12}\(?([A-D])\)?(?![A-Za-z])/i);
+  const labels = [...text.matchAll(/\b(?:answer|option|choice|pick|say|go with)\b[^A-Za-z0-9]{0,12}\(?([A-D])\)?(?![A-Za-z])/gi)];
+  const labelled = labels.length ? labels[labels.length - 1] : null;
   if (labelled) {
     const i = labelled[1].toUpperCase().charCodeAt(0) - 65;
     if (i < choices.length) return i;
@@ -256,8 +308,24 @@ function parsePick(reply, choices) {
   return best >= 0 ? best : null;
 }
 
+/**
+ * Drop the reasoning block a hybrid model may put in front of its answer.
+ *
+ * Ollama hands thinking back in its own field, so this is mostly for the
+ * OpenAI-compatible servers, which inline it. An unterminated block means the
+ * reply was cut off mid-thought - there is no answer behind it, and returning
+ * empty is honest where returning the musings would be nonsense on the card.
+ */
+function stripThinking(reply) {
+  const text = String(reply || '');
+  if (!/<(?:think|thinking)>/i.test(text)) return text;
+  return text
+    .replace(/<(?:think|thinking)>[\s\S]*?<\/(?:think|thinking)>/gi, ' ')
+    .replace(/<(?:think|thinking)>[\s\S]*$/i, ' ');
+}
+
 function tidy(reply) {
-  const text = String(reply || '').replace(/\s+/g, ' ').trim();
+  const text = stripThinking(reply).replace(/\s+/g, ' ').trim();
   if (text.length <= MAX_REPLY_CHARS) return text;
   return text.slice(0, MAX_REPLY_CHARS).replace(/\s+\S*$/, '') + '…';
 }
@@ -279,21 +347,34 @@ async function ask(question, choices) {
         { role: 'system', content: SYSTEM },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.8,
-      max_tokens: 120,
+      temperature: TEMPERATURE,
+      max_tokens: MAX_TOKENS,
     });
     raw = data && data.choices && data.choices[0] && data.choices[0].message
       ? data.choices[0].message.content
       : '';
   } else {
-    const data = await post('/api/generate', {
+    const body = {
       model: MODEL,
       system: SYSTEM,
       prompt,
       stream: false,
+      think: THINK,
       keep_alive: KEEP_ALIVE,
-      options: { temperature: 0.8, num_predict: 120 },
-    });
+      options: { temperature: TEMPERATURE, num_predict: MAX_TOKENS },
+    };
+    // `think` is only understood by newer Ollama, and only for models that can
+    // reason. Rather than gate on a version and a model list, ask once and drop
+    // the field if we are told off for it - the /no_think in SYSTEM still does
+    // the job on the retry.
+    let data;
+    try {
+      data = await post('/api/generate', body);
+    } catch (err) {
+      if (!/\b400\b/.test(String(err && err.message))) throw err;
+      delete body.think;
+      data = await post('/api/generate', body);
+    }
     raw = data ? data.response : '';
   }
 

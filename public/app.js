@@ -679,7 +679,7 @@
         ? `${llmInfo.model || 'The model'} is not reachable right now`
         : llmInfo.warm === false
           ? `${llmInfo.model || 'The model'} is still waking up - the first answer may take a moment`
-          : `Ask ${llmInfo.model || 'the AI'} - it is very small, so brace yourself`;
+          : `Ask ${llmInfo.model || 'the AI'} - it is usually right, but it is not infallible`;
   }
 
   function renderLlmAnswer(q) {

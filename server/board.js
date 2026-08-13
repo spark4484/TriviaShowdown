@@ -32,9 +32,9 @@ const CATEGORY_SETS = {
   nerd: [
     { id: 0, key: 'religion', name: 'Religions of the World', short: 'Rel', color: '#2d7dd2' },
     { id: 1, key: 'compsci', name: 'Computer Science & Tech', short: 'CS', color: '#e0489f' },
-    { id: 2, key: 'history', name: 'History', short: 'His', color: '#eab308' },
+    { id: 2, key: 'mythology', name: 'Mythology & Folklore', short: 'Myt', color: '#eab308' },
     { id: 3, key: 'anime', name: 'Anime & Manga', short: 'Ani', color: '#9061f9' },
-    { id: 4, key: 'science', name: 'Science & Nature', short: 'Sci', color: '#22c55e' },
+    { id: 4, key: 'ml', name: 'Machine Learning', short: 'ML', color: '#22c55e' },
     { id: 5, key: 'games', name: 'Video Games', short: 'Vid', color: '#f97316' },
   ],
 };

@@ -19,9 +19,9 @@ const { votes, RETIRE_DOWNS, RETIRE_RATIO, VOTES_FILE } = require('../server/vot
 
 const limit = Number(process.argv[2]) > 0 ? Number(process.argv[2]) : Infinity;
 
-// Ratings are global, so a rated question could have come from either bank -
-// and History and Science questions are in both. The label says which, since a
-// slot number on its own no longer identifies a subject.
+// Ratings are global, so a rated question could have come from either bank.
+// The label says which, since a slot number on its own does not identify a
+// subject.
 const labels = new Map();
 for (const [edition, bank] of [['classic', CLASSIC], ['nerd', NERD]]) {
   for (const q of bank) labels.set(q.id, CATEGORY_SETS[edition][q.c].name);
